@@ -61,12 +61,7 @@ onMounted(() => {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(mapa)
 
-  // Se agrega el marcador en la ubicación inicial
-  L.marker([latMelo, lngMelo]).addTo(mapa)
-    .bindPopup('Centro Melo')
-    .openPopup()
-
-    //guardamos el marcador en una variable para poder moverlo cuando el usuario haga click en el mapa
+  //guardamos el marcador en una variable para poder moverlo cuando el usuario haga click en el mapa
     const marcador = L.marker([latMelo, lngMelo]).addTo(mapa)
 
     //escuchamos los clicks del mapa
