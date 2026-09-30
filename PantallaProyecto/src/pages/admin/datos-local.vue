@@ -5,7 +5,7 @@
       <!-- Tarjeta principal con sombras y bordes limpios -->
       <q-card class="shadow-3 radius-16 overflow-hidden bg-white">
         
-        <!-- Encabezado con mayor contraste y texto legible -->
+        <!-- Encabezado -->
         <q-card-section class="q-pb-none text-center">
           <div class="text-h5 text-weight-bolder text-grey-10">
             Datos del local
@@ -15,7 +15,7 @@
           </div>
         </q-card-section>
 
-        <!-- Formulario con placeholders visibles y etiquetas claras -->
+        <!-- Formulario -->
         <q-card-section class="q-gutter-y-md q-pt-md">
           <q-input
             v-model="direccion"
@@ -58,7 +58,7 @@
           </div>
         </q-card-section>
 
-        <!-- Botón de guardar con texto grande y nítido -->
+        <!-- Botón de guardar -->
         <q-card-actions class="q-px-md q-pb-md">
           <q-btn
             label="Guardar cambios"
@@ -100,7 +100,20 @@ onMounted(() => {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(mapa)
 
-  const marcador = L.marker([latMelo, lngMelo]).addTo(mapa)
+  // Marcador SVG personalizado exactamente igual al de la imagen
+  const iconoGoogleMaps = L.divIcon({
+    className: 'custom-svg-pin',
+    html: `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" class="svg-pin-icon">
+        <path fill="#1a73e8" d="M172.268 501.67C26.97 291.03 0 269.41 0 192 0 85.96 85.96 0 192 0s192 85.96 192 192c0 77.41-26.97 99.03-172.268 309.67a24 24 0 0 1-35.464 0z"/>
+        <circle cx="192" cy="192" r="70" fill="#FFFFFF"/>
+      </svg>
+    `,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42]
+  })
+
+  const marcador = L.marker([latMelo, lngMelo], { icon: iconoGoogleMaps }).addTo(mapa)
 
   mapa.on('click', function (evento) {
     marcador.setLatLng(evento.latlng)
@@ -145,5 +158,18 @@ onMounted(() => {
   font-size: 15px !important;
   font-weight: 600 !important;
   color: #4b4a4a !important;
+}
+
+/* Estilos para el marcador SVG */
+:deep(.custom-svg-pin) {
+  background: transparent !important;
+  border: none !important;
+}
+
+:deep(.svg-pin-icon) {
+  width: 32px;
+  height: 42px;
+  display: block;
+  filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.35));
 }
 </style>
