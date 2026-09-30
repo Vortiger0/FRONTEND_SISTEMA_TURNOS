@@ -9,17 +9,17 @@
       <!-- Cada tarjeta ocupa una columna. col-4 = un tercio del ancho,
            así entran las 3 en la misma fila -->
       <div class="col-4">
-        <q-card class="shadow-2 text-center q-pa-lg" style="min-width: 400px;">
-          <div class="text-caption text-grey-7">Turnos hoy</div>
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 400px;">
+          <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Turnos hoy</div> 
           <div class="text-h2 text-weight-bold text-primary">
             {{ turnosHoy }}
           </div>
         </q-card>
-      </div>
+      </div> 
 
       <div class="col-4">
-        <q-card class="shadow-2 text-center q-pa-lg " style="min-width: 400px;">
-          <div class="text-caption text-grey-7">Número actual</div>
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg " style="min-width: 400px;">
+          <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Número actual</div>
           <div class="text-h2 text-weight-bold text-primary">
             {{ numeroActual }}
           </div>
@@ -27,8 +27,8 @@
       </div>
 
       <div class="col-4">
-        <q-card class="shadow-2 text-center q-pa-lg" style="min-width: 400px;">
-          <div class="text-caption text-grey-7" >Estado del local</div>
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 400px;">
+          <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Estado del local</div>
           <div class="text-h2 text-weight-bold" :class="colorEstado">
             {{ estadoLocal }}
           </div>
@@ -53,3 +53,10 @@ const colorEstado = computed(() => {
   return estadoLocal.value === 'Abierto' ? 'text-positive' : 'text-negative'
 })
 </script>
+
+<style scoped>
+.card-redondeada {
+  border-radius: 20px;
+}
+
+</style>

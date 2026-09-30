@@ -49,6 +49,7 @@ const cerrarSesion = () => {
   mostrarConfirmacion.value = false
   router.push('/login')
 }
+
 </script>
 
 <style>
