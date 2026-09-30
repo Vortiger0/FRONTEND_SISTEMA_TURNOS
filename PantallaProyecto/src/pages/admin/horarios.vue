@@ -1,17 +1,17 @@
 <template>
   <q-page class="bg-grey-2 q-pa-md flex justify-center">
     <div style="width: 100%; max-width: 500px;">
-      <q-card class="shadow-3">
+      <q-card class="shadow-3" style="border-radius: 16px; overflow: hidden;">
 
         <!-- para los horarios semanales -->
         <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Horario de atención</div>
+          <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-sm">Horario de atención</div>
 
           <!-- una fila por cada día, gracias al v-for -->
           <div v-for="horario in horarios" :key="horario.dia" class="row items-center q-mb-sm q-gutter-x-sm">
 
             <!-- nombre del día, con ancho fijo para que todos queden alineados -->
-            <div style="width: 90px;">{{ horario.dia }}</div>
+            <div class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs" style="width: 90px;">{{ horario.dia }}</div>
 
             <!-- checkbox: si atiende o no ese día -->
             <q-checkbox v-model="horario.atiende" />
@@ -29,13 +29,13 @@
 
         <!-- Margen de corte -->
         <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Dejar de emitir turnos nuevos (minutos antes del cierre)</div>
+          <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-md">Dejar de emitir turnos nuevos (minutos antes del cierre)</div>
           <q-select
             v-model="margenCorte"
             :options="[0, 5, 10, 15, 20, 30]"
             dense
             outlined
-            style="max-width: 220px;"
+            style="max-width: 220px;" 
             :option-label="(val) => `${val} min antes`"
           >
             <template v-slot:selected>
@@ -48,24 +48,31 @@
 
         <!-- Indicador de concurrencia -->
         <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Indicador de concurrencia</div>
+          <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-md">Indicador de concurrencia</div>
 
           <div class="row items-center q-gutter-x-sm q-mb-xs">
-            <div style="width: 140px;">Poco concurrido:</div>
-            <span>Hasta</span>
-            <q-input v-model.number="umbralPocoConcurrido" type="number" dense outlined style="width: 90px;" min="0" 
+            <div class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs" style="width: 140px;">Poco concurrido:</div>
+            <span class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs">Hasta</span>
+            <q-input 
+            v-model.number="umbralPocoConcurrido" 
+            type="number" 
+            dense 
+            outlined 
+            style="width: 90px;" 
+            min="0" 
             max="9999"
+            @keydown="bloquearSimbolos"
             :rules="[
               val => val >= 0 || 'No puede ser menor a 0',
               val => val <= 9999 || 'El valor es demasiado alto'
             ]" 
                       />
-            <span>personas</span>
+            <span class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs">personas</span>
           </div>
 
           <div class="row items-center q-gutter-x-sm q-mb-xs">
-            <div style="width: 140px;">Concurrido:</div>
-            <span>Hasta</span>
+            <div class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs" style="width: 140px;">Concurrido:</div>
+            <span class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs">Hasta</span>
             <q-input v-model.number="umbralConcurrido" type="number" dense outlined style="width: 90px;" min="0" 
             max="9999"
             :rules="[
@@ -73,7 +80,7 @@
               val => val <= 9999 || 'El valor es demasiado alto'
             ]" 
             />
-            <span>personas</span>
+            <span class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs">personas</span>
           </div>
 
           <div class="text-caption text-grey-7">
@@ -89,8 +96,8 @@
         <q-separator />
 
         <!-- Tope de emisión diaria de turnos -->
-        <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Tope de emisión diaria</div>
+        <q-card-section class="q-py-sm">
+          <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-sm">Tope de emisión diaria</div>
           <div class="row items-center q-gutter-x-sm">
             <q-input
               v-model.number="topeEmisionDiaria"
@@ -100,19 +107,21 @@
               style="width: 100px;"
               min = "0"
               max = "9999"
+              @keydown="bloquearSimbolos"
               :rules="[
                 val => val >= 0 || 'No puede ser menor a 0',
                 val => val <= 9999 || 'El valor es demasiado alto'
               ]"
             />
-            <span>turnos</span>
+            <span class="text-subtitle2 text-weight-bold text-grey-8 q-mt-xs">turnos</span>
           </div>
         </q-card-section>
 
         
         <!-- Cantidad de cajas -->
-        <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Cantidad de cajas en la sucursal</div>
+        <q-card-section class="q-py-none">
+          <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-sm">Cantidad de cajas en la sucursal</div>
+          <div class="row items-center q-mb-md">
           <q-input
             v-model.number="sucursalStore.cantidadCajas"
             type="number"
@@ -120,16 +129,18 @@
             outlined
             style="max-width: 150px;"
             min="1"
+            @keydown="bloquearSimbolos"
             :rules="[
               val => val >= 1 || 'No puede ser menor a 1',
               val => val <= 9999 || 'El valor es demasiado alto'
             ]"
           />
+          </div>
         </q-card-section>
 
         <!-- excepciones -->
-        <q-card-section>
-          <div class="text-subtitle1 text-weight-bold q-mb-sm">Feriados/días cerrados</div>
+        <q-card-section class="q-py-none">
+          <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-sm">Feriados/días cerrados</div>
 
           <div class="row items-center q-gutter-x-sm q-mb-sm">
             <q-input v-model="nuevaFechaExcepcion" type="date" dense outlined style="width: 180px;" />
@@ -137,14 +148,20 @@
           </div>
 
           <!-- Una fila por cada excepción ya cargada -->
-          <div v-for="fecha in excepciones" :key="fecha" class="row items-center justify-between bg-red-1 text-red-9 q-pa-sm q-mb-xs" style="border-radius: 4px;">
+          <div v-for="fecha in excepciones" :key="fecha" class="row items-center justify-between bg-red-1 text-red-9 q-pa-sm q-mb-xs" style="border-radius: 20px;">
             <span>{{ fecha }}</span>
             <q-btn flat round dense icon="close" color="red-9" @click="quitarExcepcion(fecha)" />
           </div>
         </q-card-section>
 
         <q-card-actions class="q-pa-md">
-           <q-btn label="Guardar" color="primary" unelevated class="full-width" @click="guardarHorarios" />
+           <q-btn 
+           label="Guardar" 
+           color="primary" 
+           unelevated 
+           rounded
+           class="full-width" 
+           @click="guardarHorarios" />
         </q-card-actions>
 
       </q-card>
@@ -192,5 +209,30 @@ const quitarExcepcion = (fecha) => {
   excepciones.value = excepciones.value.filter(f => f !== fecha)
 }
 
+// bloquear caracteres especiales
+const bloquearSimbolos = (event) => {
+  if (['-','_','.', ',', 'e', 'E'].includes(event.key)) {
+    event.preventDefault()
+  }
+}
 
 </script>
+
+<style scoped>
+
+:deep(.q-field--outlined .q-field__control) {
+  border-radius: 15px !important;
+  border-color: #636868;
+}
+
+:deep(.q-field__native) {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #4b4a4a !important;
+}
+
+.row.items-center {
+  padding-left: 12px;
+}
+
+</style>

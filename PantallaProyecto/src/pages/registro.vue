@@ -75,4 +75,5 @@ const nombre = ref('')
 const correo = ref('')
 const password = ref('')
 const repeatPassword = ref('')
+
 </script>
