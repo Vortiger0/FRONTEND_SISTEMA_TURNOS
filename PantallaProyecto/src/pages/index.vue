@@ -38,7 +38,7 @@ meta:
             class="col-12 col-sm-6 col-md-4"
           >
             <q-card
-              class="cursor-pointer card-hover shadow-2 text-center q-pa-sm"
+              class="cursor-pointer card-hover card-redondeada shadow-2 text-center q-pa-sm"
               :style="{ 'border-left': `6px solid ${colorEstadoHex(sede.estado)}` }"
               @click="seleccionarSede(sede)"
             >
@@ -193,4 +193,5 @@ const colorEstadoHex = (estado) => {
 .margin-auto { margin-left: auto; margin-right: auto; }
 .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important; }
+.card-redondeada { border-radius: 15px; overflow: hidden; }
 </style>

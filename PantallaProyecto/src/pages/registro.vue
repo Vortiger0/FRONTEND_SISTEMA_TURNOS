@@ -5,7 +5,7 @@ meta:
 
 <template>
   <q-page class="bg-grey-2 flex flex-center q-pa-md">
-    <q-card class="shadow-3 q-pa-md" style="width: 100%; max-width: 400px;">
+    <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 400px;">
       <q-card-section class="text-center">
         <div class="text-h6 text-weight-bold text-grey-9">
           Registro
@@ -47,6 +47,7 @@ meta:
         <q-btn
           label="Crearse cuenta"
           color="primary"
+          style="border-radius: 10px;"
           unelevated
           class="full-width q-py-sm"
           to="/login"
@@ -77,3 +78,21 @@ const password = ref('')
 const repeatPassword = ref('')
 
 </script>
+
+<style scoped>
+.card-redondeada {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+:deep(.q-field--outlined .q-field__control) {
+  border-radius: 15px;
+  border-color: #636868;
+}
+
+:deep(.q-field__label) {
+  font-weight: 700 !important;
+  font-size: 15px !important;
+}
+
+</style>

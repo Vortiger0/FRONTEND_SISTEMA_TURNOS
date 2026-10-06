@@ -89,7 +89,7 @@ meta:
 
     <!-- DIÁLOGO DE CONFIRMACIÓN DE CANCELACIÓN -->
     <q-dialog v-model="confirmarCancelacion">
-      <q-card class="text-center q-pa-sm" style="max-width: 320px;">
+      <q-card class="text-center q-pa-sm card-redondeada" style="max-width: 320px;">
         <q-card-section>
           <div class="text-subtitle1 text-weight-bold text-grey-9">
             ¿Seguro que deseas cancelar tu turno?
@@ -100,7 +100,7 @@ meta:
         </q-card-section>
         <q-card-actions align="around">
           <q-btn flat label="No, mantener" color="grey-8" v-close-popup />
-          <q-btn label="Sí, cancelar" color="negative" unelevated @click="cancelarTurno" />
+          <q-btn label="Sí, cancelar" color="negative" unelevated style="border-radius: 10px;" @click="cancelarTurno" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -128,4 +128,5 @@ const cancelarTurno = () => {
 .radius-8 { border-radius: 8px; }
 .font-mono { font-family: monospace; }
 .select-none { user-select: none; }
+.card-redondeada { border-radius: 20px; overflow: hidden; }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <!--lo que hace q-header es fijar la barra arriba de la pantalla, incluso con scroll -->
-  <q-header elevated class="bg-blue text-white-9">
+  <q-header elevated class="bg-primary text-white-9">
     <!-- lo que hace toolbar es alinear todos los elementos en una fila horizontal -->
     <q-toolbar>
       <q-toolbar-title class="text-weight-bold" style="flex: none;">

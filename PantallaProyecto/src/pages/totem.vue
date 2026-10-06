@@ -33,8 +33,8 @@ meta:
         <q-card-section class="q-pt-none">
           <q-btn
             label="SACAR TURNO"
-            color="light-blue-4"
-            text-color="black"
+            color="primary"
+            text-color="white"
             size="22px"
             unelevated
             class="full-width q-py-md text-bold btn-touch radius-12"

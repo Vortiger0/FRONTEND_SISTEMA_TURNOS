@@ -5,7 +5,7 @@ meta:
 
 <template>
   <q-page class="bg-grey-2 flex flex-center q-pa-md">
-    <q-card class="shadow-3 q-pa-md" style="width: 100%; max-width: 420px;">
+    <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 420px;">
       
 <!-- Botón de modo de acceso Funcionario/Ciudadano -->
 <div class="column items-end q-mb-md">
@@ -82,6 +82,7 @@ meta:
           :color="esFuncionario ? 'secondary' : 'primary'"
           unelevated
           class="full-width q-py-sm"
+          style="border-radius: 10px;"
           @click="iniciarSesion"
         />
       </q-card-section>
@@ -135,4 +136,23 @@ const iniciarSesion = () => {
     router.push('/')
   }
 }
+
 </script>
+
+<style scoped>
+.card-redondeada {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+:deep(.q-field--outlined .q-field__control) {
+  border-radius: 15px;
+  border-color: #636868;
+}
+
+:deep(.q-field__label) {
+  font-weight: 700 !important;
+  font-size: 15px !important;
+}
+
+</style>
