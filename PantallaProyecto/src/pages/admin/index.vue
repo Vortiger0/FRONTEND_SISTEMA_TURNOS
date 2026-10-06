@@ -2,14 +2,17 @@
   <!-- q-pa-md le da un padding parejo a toda la página -->
   <q-page class="bg-grey-2 q-pa-md flex justify-center flex-center q-pt-xl">
 
-    <!-- row + q-col-gutter-md: acomoda las 3 tarjetas en fila,
-         con un espacio parejo entre ellas -->
-    <div class="row q-col-gutter-md">
+    <!-- Indicador de carga inicial -->
+    <div v-if="cargando" class="flex flex-center q-pa-xl">
+      <q-spinner color="primary" size="50px" />
+    </div>
 
-      <!-- Cada tarjeta ocupa una columna. col-4 = un tercio del ancho,
-           así entran las 3 en la misma fila -->
-      <div class="col-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 400px;">
+    <!-- row + q-col-gutter-md: acomoda las 3 tarjetas en fila -->
+    <div v-else class="row q-col-gutter-md">
+
+      <!-- Cada tarjeta ocupa una columna (col-12 en móviles, col-4 en escritorio) -->
+      <div class="col-12 col-md-4">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Turnos hoy</div> 
           <div class="text-h2 text-weight-bold text-primary">
             {{ turnosHoy }}
@@ -17,17 +20,17 @@
         </q-card>
       </div> 
 
-      <div class="col-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg " style="min-width: 400px;">
+      <div class="col-12 col-md-4">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Número actual</div>
           <div class="text-h2 text-weight-bold text-primary">
-            {{ numeroActual }}
+            {{ numeroActual ? `#${numeroActual}` : '--' }}
           </div>
         </q-card>
       </div>
 
-      <div class="col-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 400px;">
+      <div class="col-12 col-md-4">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Estado del local</div>
           <div class="text-h2 text-weight-bold" :class="colorEstado">
             {{ estadoLocal }}
@@ -40,17 +43,64 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-// Datos simulados del panel (más adelante vendrían del backend real)
-const turnosHoy = ref(38)
-const numeroActual = ref(45)
-const estadoLocal = ref('Abierto')
+const turnosHoy = ref(0)
+const numeroActual = ref(null)
+const estadoLocal = ref('Cerrado')
 
-// El color del texto cambia según el estado, para que se note
-// "Abierto" en verde y "Cerrado" en rojo
+const cargando = ref(true)
+let timerPolling = null
+
+const API_URL = 'http://localhost:3000/api/dashboard/resumen'
+
+// El color del texto cambia según el estado
 const colorEstado = computed(() => {
   return estadoLocal.value === 'Abierto' ? 'text-positive' : 'text-negative'
+})
+
+// GET: Obtener métricas del dashboard en tiempo real
+const obtenerMetricas = async (esCargaInicial = false) => {
+  if (esCargaInicial) cargando.value = true
+  
+  try {
+    /*
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (!response.ok) throw new Error('Error al consultar el resumen del dashboard')
+    const data = await response.json()
+
+    turnosHoy.value = data.turnosHoy
+    numeroActual.value = data.numeroActual
+    estadoLocal.value = data.estadoLocal
+    */
+
+    // Simulación de respuesta mientras se conecta la API
+    turnosHoy.value = 38
+    numeroActual.value = 45
+    estadoLocal.value = 'Abierto'
+  } catch (error) {
+    console.error('Error al obtener métricas del dashboard:', error)
+  } finally {
+    if (esCargaInicial) cargando.value = false
+  }
+}
+
+onMounted(() => {
+  // Carga inicial
+  obtenerMetricas(true)
+
+  // Polling: Actualiza los datos cada 10 segundos
+  timerPolling = setInterval(() => {
+    obtenerMetricas(false)
+  }, 10000)
+})
+
+onUnmounted(() => {
+  // Limpia el intervalo al salir de la vista
+  if (timerPolling) clearInterval(timerPolling)
 })
 </script>
 
@@ -58,5 +108,4 @@ const colorEstado = computed(() => {
 .card-redondeada {
   border-radius: 20px;
 }
-
 </style>

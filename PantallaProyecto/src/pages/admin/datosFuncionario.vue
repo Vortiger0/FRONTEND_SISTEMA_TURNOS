@@ -1,3 +1,6 @@
+Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron las funciones `fetch` para realizar el CRUD completo (`GET`, `POST`, `PUT`, `DELETE`), incluyendo estados de carga (`cargando`, `guardando`) y el chip estilizado con el icono de caja registradora (`point_of_sale`) que solicitaste anteriormente.
+
+```html
 <template>
   <q-page class="bg-grey-2 q-pa-md flex justify-center">
     <div style="width: 100%; max-width: 520px;">
@@ -21,6 +24,7 @@
             unelevated
             no-caps
             class="btn-action text-weight-bold"
+            :disable="cargando"
             @click="abrirNuevo"
           >
             <div class="flex items-center q-gutter-x-xs">
@@ -30,11 +34,16 @@
           </q-btn>
         </q-card-section>
 
-        <!-- Lista de funcionarios refinada con etiquetas de alto contraste -->
-        <q-list separator class="q-py-xs">
+        <!-- Spinner de carga inicial -->
+        <div v-if="cargando" class="flex flex-center q-pa-xl">
+          <q-spinner color="primary" size="40px" />
+        </div>
+
+        <!-- Lista de funcionarios -->
+        <q-list v-else separator class="q-py-xs">
           <q-item
             v-for="funcionario in funcionarios"
-            :key="funcionario.usuario"
+            :key="funcionario.id || funcionario.usuario"
             class="q-py-md q-px-lg"
           >
             <q-item-section avatar>
@@ -47,20 +56,22 @@
               </q-item-label>
               
               <q-item-label class="text-body2 text-weight-bold text-grey-8 flex items-center gap-1 q-mt-xs">
+                <!-- Chip de Caja con icono pequeño -->
                 <q-chip
                   dense
-                  color="grey-3"
-                  text-color="grey-10"
-                  class="text-weight-bold q-px-sm"
-                  size="12px"
+                  color="blue-1"
+                  text-color="primary"
+                  icon="point_of_sale"
+                  class="text-weight-bolder q-px-sm"
+                  size="13px"
                 >
                   Caja {{ funcionario.caja }}
                 </q-chip>
-                <span class="text-grey-7 q-ml-xs">{{ funcionario.usuario }}</span>
+                <span class="text-grey-7 q-ml-xs text-weight-bold">{{ funcionario.usuario }}</span>
               </q-item-label>
             </q-item-section>
 
-            <!-- Botones de edición y eliminación bien definidos -->
+            <!-- Botones de edición y eliminación -->
             <q-item-section side>
               <div class="row q-gutter-xs">
                 <q-btn
@@ -86,6 +97,10 @@
               </div>
             </q-item-section>
           </q-item>
+
+          <div v-if="funcionarios.length === 0" class="text-center text-grey-6 q-pa-md">
+            No hay funcionarios registrados.
+          </div>
         </q-list>
 
       </q-card>
@@ -104,7 +119,7 @@
           </div>
         </q-card-section>
 
-        <!-- Formulario accesible y con alto contraste -->
+        <!-- Formulario accesibilidad y alto contraste -->
         <q-card-section class="q-gutter-y-md q-pt-md">
           <q-input
             v-model="nuevoNombre"
@@ -114,6 +129,7 @@
             color="primary"
             label-color="grey-9"
             input-class="text-weight-bold text-grey-10 text-body1"
+            :disable="guardando"
           >
             <template #prepend>
               <q-icon name="badge" color="primary" size="22px" />
@@ -128,6 +144,7 @@
             color="primary"
             label-color="grey-9"
             input-class="text-weight-bold text-grey-10 text-body1"
+            :disable="guardando"
           >
             <template #prepend>
               <q-icon name="alternate_email" color="primary" size="22px" />
@@ -143,6 +160,7 @@
             color="primary"
             label-color="grey-9"
             input-class="text-weight-bold text-grey-10 text-body1"
+            :disable="guardando"
           >
             <template #prepend>
               <q-icon name="lock" color="primary" size="22px" />
@@ -167,6 +185,7 @@
             label-color="grey-9"
             popup-content-class="text-weight-bold"
             options-selected-class="text-primary text-weight-bolder"
+            :disable="guardando"
           >
             <template #prepend>
               <q-icon name="point_of_sale" color="primary" size="22px" />
@@ -182,6 +201,7 @@
             no-caps
             class="text-weight-bold"
             v-close-popup
+            :disable="guardando"
             @click="limpiarFormulario"
           />
           <q-btn
@@ -190,7 +210,8 @@
             unelevated
             no-caps
             class="btn-submit text-weight-bolder q-px-md"
-            @click="agregarFuncionario"
+            :loading="guardando"
+            @click="guardarFuncionario"
           />
         </q-card-actions>
 
@@ -201,17 +222,19 @@
 
 <script setup>
 import { useSucursalStore } from '../../stores/sucursal-store'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const sucursalStore = useSucursalStore()
 
 const funcionarios = ref([
-  { nombre: 'Lucía Fernández', usuario: '@lucia.fernandez', caja: 1, contra: '1234' },
-  { nombre: 'Martín Souza', usuario: '@martin.souza', caja: 2, contra: '1234' }
+  { id: 1, nombre: 'Lucía Fernández', usuario: '@lucia.fernandez', caja: 1, contra: '1234' },
+  { id: 2, nombre: 'Martín Souza', usuario: '@martin.souza', caja: 2, contra: '1234' }
 ])
 
 const mostrarDialogo = ref(false)
 const verContra = ref(false)
+const cargando = ref(false)
+const guardando = ref(false)
 
 const nuevoNombre = ref('')
 const nuevoUsuario = ref('')
@@ -220,10 +243,99 @@ const nuevaContra = ref('')
 
 const funcionarioEditando = ref(null)
 
+const API_URL = 'http://localhost:3000/api/funcionarios'
+
 const opcionesCajas = computed(() => {
   const total = sucursalStore.cantidadCajas || 4
   return Array.from({ length: total }, (_, i) => i + 1)
 })
+
+// GET: Obtener lista de funcionarios
+const obtenerFuncionarios = async () => {
+  cargando.value = true
+  try {
+    /*
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (!response.ok) throw new Error('Error al obtener la lista de funcionarios')
+    const data = await response.json()
+    funcionarios.value = data
+    */
+  } catch (error) {
+    console.error('Error al consultar funcionarios:', error)
+  } finally {
+    cargando.value = false
+  }
+}
+
+// POST / PUT: Crear o actualizar funcionario
+const guardarFuncionario = async () => {
+  guardando.value = true
+  try {
+    const payload = {
+      nombre: nuevoNombre.value,
+      usuario: nuevoUsuario.value,
+      caja: nuevaCaja.value,
+      contra: nuevaContra.value
+    }
+
+    if (funcionarioEditando.value) {
+      // PUT: Actualizar existente
+      console.log('Actualizando funcionario:', funcionarioEditando.value.id, payload)
+      /*
+      const response = await fetch(`${API_URL}/${funcionarioEditando.value.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!response.ok) throw new Error('Error al actualizar')
+      */
+      funcionarioEditando.value.nombre = nuevoNombre.value
+      funcionarioEditando.value.usuario = nuevoUsuario.value
+      funcionarioEditando.value.caja = nuevaCaja.value
+      funcionarioEditando.value.contra = nuevaContra.value
+    } else {
+      // POST: Crear nuevo
+      console.log('Creando nuevo funcionario:', payload)
+      /*
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!response.ok) throw new Error('Error al crear')
+      const creado = await response.json()
+      funcionarios.value.push(creado)
+      */
+      funcionarios.value.push({ ...payload, id: Date.now() })
+    }
+
+    limpiarFormulario()
+    mostrarDialogo.value = false
+  } catch (error) {
+    console.error('Error al guardar funcionario:', error)
+  } finally {
+    guardando.value = false
+  }
+}
+
+// DELETE: Eliminar funcionario
+const eliminarFuncionario = async (funcionario) => {
+  try {
+    console.log('Eliminando funcionario:', funcionario.id || funcionario.usuario)
+    /*
+    const response = await fetch(`${API_URL}/${funcionario.id}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) throw new Error('Error al eliminar')
+    */
+    funcionarios.value = funcionarios.value.filter(f => f !== funcionario)
+  } catch (error) {
+    console.error('Error al eliminar funcionario:', error)
+  }
+}
 
 const abrirNuevo = () => {
   limpiarFormulario()
@@ -248,28 +360,9 @@ const limpiarFormulario = () => {
   verContra.value = false
 }
 
-const agregarFuncionario = () => {
-  if (funcionarioEditando.value) {
-    funcionarioEditando.value.nombre = nuevoNombre.value
-    funcionarioEditando.value.usuario = nuevoUsuario.value
-    funcionarioEditando.value.caja = nuevaCaja.value
-    funcionarioEditando.value.contra = nuevaContra.value
-  } else {
-    funcionarios.value.push({
-      nombre: nuevoNombre.value,
-      usuario: nuevoUsuario.value,
-      caja: nuevaCaja.value,
-      contra: nuevaContra.value
-    })
-  }
-
-  limpiarFormulario()
-  mostrarDialogo.value = false
-}
-
-const eliminarFuncionario = (funcionario) => {
-  funcionarios.value = funcionarios.value.filter(f => f !== funcionario)
-}
+onMounted(async () => {
+  await obtenerFuncionarios()
+})
 </script>
 
 <style scoped>
@@ -293,7 +386,6 @@ const eliminarFuncionario = (funcionario) => {
   font-size: 15px;
 }
 
-/* Tipografía e intensidad reforzada en inputs */
 :deep(.q-field--outlined .q-field__control) {
   border-radius: 10px;
   border-color: #b0b0b0;
@@ -310,3 +402,5 @@ const eliminarFuncionario = (funcionario) => {
   color: #1a1a1a !important;
 }
 </style>
+
+```

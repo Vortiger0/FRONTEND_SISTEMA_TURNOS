@@ -26,6 +26,7 @@
             class="custom-input"
             label-color="grey-9"
             input-class="text-weight-bold text-grey-10 text-body1"
+            :disable="cargando"
           >
             <template #prepend>
               <q-icon name="place" color="primary" size="22px" />
@@ -41,6 +42,7 @@
             class="custom-input"
             label-color="grey-9"
             input-class="text-weight-bold text-grey-10 text-body1"
+            :disable="cargando"
           >
             <template #prepend>
               <q-icon name="phone" color="primary" size="22px" />
@@ -66,6 +68,8 @@
             unelevated
             no-caps
             class="full-width btn-submit text-weight-bolder"
+            :loading="guardando"
+            :disable="cargando"
             @click="guardarDatos"
           />
         </q-card-actions>
@@ -82,17 +86,91 @@ import L from 'leaflet'
 
 const direccion = ref('')
 const telefono = ref('')
-const latMelo = -32.3671
-const lngMelo = -54.1745
+const latitud = ref(-32.3671)
+const longitud = ref(-54.1745)
 
-const guardarDatos = () => {
-  console.log('Datos guardados:', { direccion: direccion.value, telefono: telefono.value })
+const cargando = ref(false)
+const guardando = ref(false)
+
+let mapa = null
+let marcador = null
+
+// URL base para los endpoints
+const API_URL = 'http://localhost:3000/api/local' 
+
+// GET: Obtener datos actuales del local
+const obtenerDatosLocal = async () => {
+  cargando.value = true
+  try {
+    /* 
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) throw new Error('Error al obtener datos del local')
+
+    const data = await response.json()
+    direccion.value = data.direccion
+    telefono.value = data.telefono
+    latitud.value = data.latitud
+    longitud.value = data.longitud
+
+    if (marcador && mapa) {
+      marcador.setLatLng([data.latitud, data.longitud])
+      mapa.setView([data.latitud, data.longitud], 15)
+    }
+    */
+  } catch (error) {
+    console.error('Error al consultar backend:', error)
+  } finally {
+    cargando.value = false
+  }
 }
 
-onMounted(() => {
-  const mapa = L.map('mapaSucursal', {
+// PUT / POST: Guardar cambios del local
+const guardarDatos = async () => {
+  guardando.value = true
+  try {
+    const payload = {
+      direccion: direccion.value,
+      telefono: telefono.value,
+      latitud: latitud.value,
+      longitud: longitud.value
+    }
+
+    console.log('Enviando datos al backend:', payload)
+
+    /* 
+    const response = await fetch(API_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) throw new Error('Error al guardar los cambios')
+
+    const resData = await response.json()
+    console.log('Respuesta backend:', resData)
+    */
+  } catch (error) {
+    console.error('Error al guardar en el backend:', error)
+  } finally {
+    guardando.value = false
+  }
+}
+
+onMounted(async () => {
+  // Inicialización del mapa Leaflet
+  mapa = L.map('mapaSucursal', {
     zoomControl: false
-  }).setView([latMelo, lngMelo], 15)
+  }).setView([latitud.value, longitud.value], 15)
 
   L.control.zoom({ position: 'topright' }).addTo(mapa)
 
@@ -100,7 +178,7 @@ onMounted(() => {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(mapa)
 
-  // Marcador SVG personalizado exactamente igual al de la imagen
+  // Marcador SVG personalizado
   const iconoGoogleMaps = L.divIcon({
     className: 'custom-svg-pin',
     html: `
@@ -113,11 +191,16 @@ onMounted(() => {
     iconAnchor: [16, 42]
   })
 
-  const marcador = L.marker([latMelo, lngMelo], { icon: iconoGoogleMaps }).addTo(mapa)
+  marcador = L.marker([latitud.value, longitud.value], { icon: iconoGoogleMaps }).addTo(mapa)
 
   mapa.on('click', function (evento) {
+    latitud.value = evento.latlng.lat
+    longitud.value = evento.latlng.lng
     marcador.setLatLng(evento.latlng)
   })
+
+  // Carga inicial de datos desde el backend
+  await obtenerDatosLocal()
 })
 </script>
 
@@ -125,7 +208,7 @@ onMounted(() => {
 .radius-16 {
   border-radius: 16px;
 }
-/* Borde del mapa */
+
 .map-wrapper {
   border-radius: 12px;
   overflow: hidden;
@@ -143,7 +226,6 @@ onMounted(() => {
   font-size: 16px;
 }
 
-/* Tipografía e intensidad para los inputs */
 :deep(.q-field--outlined .q-field__control) {
   border-radius: 15px;
   border-color: #636868;
@@ -160,7 +242,6 @@ onMounted(() => {
   color: #4b4a4a !important;
 }
 
-/* Estilos para el marcador SVG */
 :deep(.custom-svg-pin) {
   background: transparent !important;
   border: none !important;
