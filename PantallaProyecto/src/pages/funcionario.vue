@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 flex flex-center q-pa-md relative-position">
+  <q-page class="fondo flex flex-center q-pa-md relative-position">
     
     <div style="width: 100%; max-width: 500px;">
       <q-card class="shadow-3 q-pa-md">
@@ -153,5 +153,9 @@ const cerrarSesion = () => {
 <style scoped>
 .border-danger {
   border: 1px solid #ef9a9a !important;
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>

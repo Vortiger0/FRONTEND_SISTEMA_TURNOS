@@ -2,7 +2,7 @@ Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron la
 
 ```html
 <template>
-  <q-page class="bg-grey-2 q-pa-md flex justify-center">
+  <q-page class="fondo q-pa-md flex justify-center">
     <div style="width: 100%; max-width: 520px;">
 
       <!-- Tarjeta principal refinada con esquinas redondeadas -->
@@ -400,6 +400,10 @@ onMounted(async () => {
   font-size: 15px !important;
   font-weight: 600 !important;
   color: #1a1a1a !important;
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>
 

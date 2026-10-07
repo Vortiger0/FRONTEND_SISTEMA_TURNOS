@@ -4,10 +4,11 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 flex flex-center q-pa-md">
+  <q-page class="fondo flex flex-center q-pa-md">
     <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 420px;">
-      
+
 <!-- Botón de modo de acceso Funcionario/Ciudadano -->
+
 <div class="column items-end q-mb-md">
   <div class="text-caption text-bold text-grey-7 text-uppercase">
     Modo de acceso:
@@ -154,5 +155,4 @@ const iniciarSesion = () => {
   font-weight: 700 !important;
   font-size: 15px !important;
 }
-
 </style>

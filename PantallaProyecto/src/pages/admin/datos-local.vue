@@ -1,5 +1,5 @@
 <template>
-  <q-page class="bg-grey-2 q-pa-md flex flex-center">
+  <q-page class="fondo q-pa-md flex flex-center">
     <div style="width: 100%; max-width: 480px;">
 
       <!-- Tarjeta principal con sombras y bordes limpios -->
@@ -252,5 +252,9 @@ onMounted(async () => {
   height: 42px;
   display: block;
   filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.35));
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>

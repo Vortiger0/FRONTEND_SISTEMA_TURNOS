@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-3 flex flex-center q-pa-xl select-none container-tv">
+  <q-page class="fondo flex flex-center q-pa-xl select-none container-tv">
     <q-card class="shadow-8 radius-16 overflow-hidden full-width card-main">
       
       <!-- ENCABEZADO TV CON HORA EN VIVO -->
@@ -192,5 +192,9 @@ onUnmounted(() => {
   .footer-section {
     padding: 0.75rem !important;
   }
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>

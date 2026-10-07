@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 q-pa-md flex flex-center">
+  <q-page class="fondo q-pa-md flex flex-center">
     <div style="width: 100%; max-width: 480px;">
       
       <q-btn
@@ -90,3 +90,9 @@ const confirmarTurno = () => {
   turnoOtorgado.value = true
 }
 </script>
+
+<style scoped>
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
+}
+</style>

@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 flex flex-center q-pa-md select-none">
+  <q-page class="fondo flex flex-center q-pa-md select-none">
     <q-card class="shadow-4 radius-16 text-center" style="width: 100%; max-width: 420px;">
       
       <!-- ENCABEZADO CON SUCURSAL -->
@@ -129,4 +129,8 @@ const cancelarTurno = () => {
 .font-mono { font-family: monospace; }
 .select-none { user-select: none; }
 .card-redondeada { border-radius: 20px; overflow: hidden; }
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
+}
 </style>
