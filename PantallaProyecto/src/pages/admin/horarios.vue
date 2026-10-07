@@ -1,5 +1,5 @@
 <template>
-  <q-page class="bg-grey-2 q-pa-md flex justify-center">
+  <q-page class="fondo q-pa-md flex justify-center">
     <div style="width: 100%; max-width: 500px;">
       <q-card class="shadow-3" style="border-radius: 16px; overflow: hidden;">
 
@@ -335,5 +335,9 @@ onMounted(() => {
 
 .row.items-center {
   padding-left: 12px;
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>

@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 flex flex-center q-pa-md">
+  <q-page class="fondo flex flex-center q-pa-md">
     <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 400px;">
       <q-card-section class="text-center">
         <div class="text-h6 text-weight-bold text-grey-9">
@@ -95,4 +95,7 @@ const repeatPassword = ref('')
   font-size: 15px !important;
 }
 
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
+}
 </style>

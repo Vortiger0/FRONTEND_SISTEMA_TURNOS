@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 flex flex-center q-pa-md select-none">
+  <q-page class="fondo flex flex-center q-pa-md select-none">
     <div style="width: 100%; max-width: 450px;">
       
       <!-- PANTALLA 1: ESTADO INICIAL -->
@@ -162,5 +162,9 @@ onUnmounted(() => {
 
 .btn-touch:active {
   transform: scale(0.97);
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>

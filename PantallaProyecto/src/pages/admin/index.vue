@@ -1,6 +1,6 @@
 <template>
   <!-- q-pa-md le da un padding parejo a toda la página -->
-  <q-page class="bg-grey-2 q-pa-md flex justify-center flex-center q-pt-xl">
+  <q-page class="fondo q-pa-md flex justify-center flex-center q-pt-xl">
 
     <!-- Indicador de carga inicial -->
     <div v-if="cargando" class="flex flex-center q-pa-xl">
@@ -107,5 +107,9 @@ onUnmounted(() => {
 <style scoped>
 .card-redondeada {
   border-radius: 20px;
+}
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>
