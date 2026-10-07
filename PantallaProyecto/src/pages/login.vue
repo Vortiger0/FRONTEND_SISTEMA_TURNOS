@@ -7,18 +7,17 @@ meta:
   <q-page class="fondo flex flex-center q-pa-md">
     <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 420px;">
 
-<!-- Botón de modo de acceso Funcionario/Ciudadano -->
-
-<div class="column items-end q-mb-md">
-  <div class="text-caption text-bold text-grey-7 text-uppercase">
-    Modo de acceso:
-  </div>
-  <q-toggle
-    v-model="esFuncionario"
-    :label="esFuncionario ? 'Ciudadano' : 'Funcionario'"
-    color="primary"
-  />
-</div>
+      <!-- BOTÓN DE MODO DE ACCESO FUNCIONARIO / CIUDADANO -->
+      <div class="column items-end q-mb-md">
+        <div class="text-caption text-bold text-grey-7 text-uppercase">
+          Modo de acceso:
+        </div>
+        <q-toggle
+          v-model="esFuncionario"
+          :label="esFuncionario ? 'Funcionario' : 'Ciudadano'"
+          color="primary"
+        />
+      </div>
 
       <!-- CABECERA ADAPTATIVA -->
       <q-card-section class="text-center q-pt-xs">
@@ -137,10 +136,13 @@ const iniciarSesion = () => {
     router.push('/')
   }
 }
-
 </script>
 
 <style scoped>
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
+}
+
 .card-redondeada {
   border-radius: 20px;
   overflow: hidden;

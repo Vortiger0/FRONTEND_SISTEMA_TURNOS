@@ -15,7 +15,7 @@ meta:
           label="Mis turnos"
           style="box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
           unelevated
-          to="/misturnos"
+          @click="abrirMisTurnos"
         />
         <q-btn
           flat
@@ -109,7 +109,7 @@ meta:
       </q-card>
     </q-dialog>
 
-    <!-- 2. VENTANA EMERGENTE: CONFIRMACIÓN DE TURNO -->
+    <!-- 2. VENTANA EMERGENTE: ADVERTENCIA Y CONFIRMACIÓN DE TURNO -->
     <q-dialog v-model="mostrarConfirmacionTurno" persistent>
       <q-card class="q-pa-md text-center radius-16" style="max-width: 450px; width: 100%;">
         
@@ -139,7 +139,7 @@ meta:
           <q-icon name="warning" color="warning" size="72px" class="q-mb-sm" />
 
           <div class="text-h6 text-weight-bolder text-black q-mb-xs">
-            (mensaje de advertencia)
+            Atención
           </div>
 
           <div class="text-body2 text-grey-8 q-mt-sm">
@@ -168,7 +168,101 @@ meta:
       </q-card>
     </q-dialog>
 
-    <!-- DIÁLOGO DE CONFIRMACIÓN DE LOGOUT -->
+    <!-- 3. VENTANA EMERGENTE: MIS TURNOS -->
+    <q-dialog v-model="mostrarMisTurnos">
+      <q-card class="q-pa-md radius-16" style="max-width: 480px; width: 100%;">
+        
+        <!-- CABECERA DEL MODAL CON BOTÓN DE CIERRE (X) -->
+        <div class="row items-center justify-between q-mb-sm">
+          <div class="row items-center q-gutter-x-sm">
+            <div class="text-h6 text-weight-bolder text-uppercase text-grey-9">
+              MIS TURNOS
+            </div>
+            <div class="text-caption text-grey-7 text-weight-medium">
+              {{ turnoActual?.sede || 'Abitab, Aparicio Saravia 598' }}
+            </div>
+          </div>
+
+          <!-- BOTÓN X PARA CERRAR EL MODAL -->
+          <q-btn flat round dense icon="close" color="grey-7" v-close-popup />
+        </div>
+
+        <q-separator color="grey-3" class="q-mb-md" />
+
+        <q-card-section class="q-pt-none text-center">
+          <!-- TARJETA DEL NÚMERO ASIGNADO -->
+          <q-card flat bordered class="q-pa-md radius-12 bg-grey-1">
+            <div class="text-caption text-grey-8 text-weight-bold">
+              Tu número:
+            </div>
+            <div class="text-h1 text-weight-bolder text-positive q-my-xs">
+              {{ turnoActual?.numero || 28 }}
+            </div>
+          </q-card>
+
+          <!-- LISTA DE PRÓXIMOS NÚMEROS -->
+          <div class="q-mt-lg">
+            <div class="text-caption text-grey-8 text-weight-bold q-mb-xs">
+              Próximos números:
+            </div>
+            <div class="row justify-center items-center q-gutter-x-sm text-subtitle1 text-weight-bolder text-grey-9">
+              <span v-for="num in proximosNumeros" :key="num">
+                {{ num }}
+              </span>
+            </div>
+          </div>
+        </q-card-section>
+
+        <!-- BOTÓN SOLICITAR CANCELACIÓN TURNO -->
+        <q-card-actions align="center" class="q-pt-md q-pb-none">
+          <q-btn
+            label="CANCELAR TURNO"
+            color="red-4"
+            text-color="white"
+            unelevated
+            class="full-width text-bold radius-8"
+            size="lg"
+            @click="pedirConfirmacionCancelar"
+          />
+        </q-card-actions>
+
+      </q-card>
+    </q-dialog>
+
+    <!-- 4. DIÁLOGO DE CONFIRMACIÓN PARA CANCELAR TURNO -->
+    <q-dialog v-model="confirmarCancelarTurno" persistent>
+      <q-card class="text-center q-pa-md radius-16" style="max-width: 380px; width: 100%;">
+        <q-card-section class="q-pt-sm">
+          <q-icon name="warning" color="negative" size="56px" class="q-mb-xs" />
+          
+          <div class="text-h6 text-weight-bold text-grey-9 q-mt-xs">
+            ¿Cancelar turno?
+          </div>
+          <div class="text-body2 text-grey-7 q-mt-sm">
+            ¿Está seguro de que desea cancelar su turno reservado? Perderá su lugar en la fila.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="around" class="q-pt-xs">
+          <q-btn 
+            flat 
+            label="NO, CONSERVAR" 
+            color="grey-8" 
+            class="text-weight-bold"
+            v-close-popup 
+          />
+          <q-btn 
+            label="SÍ, CANCELAR" 
+            color="negative" 
+            unelevated 
+            class="text-weight-bold q-px-md"
+            @click="cancelarTurnoConfirmado" 
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- 5. DIÁLOGO DE CONFIRMACIÓN DE LOGOUT -->
     <q-dialog v-model="confirmarLogout">
       <q-card class="text-center q-pa-sm radius-16" style="max-width: 320px; width: 100%;">
         <q-card-section>
@@ -192,10 +286,8 @@ meta:
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 
-const router = useRouter()
 const $q = useQuasar()
 
 const busqueda = ref('')
@@ -204,11 +296,20 @@ const sedeSeleccionada = ref(null)
 // Variables de estado para los modales
 const mostrarDetalle = ref(false)
 const mostrarConfirmacionTurno = ref(false)
+const mostrarMisTurnos = ref(false)
+const confirmarCancelarTurno = ref(false)
 const confirmarLogout = ref(false)
 const procesandoTurno = ref(false)
 
+// Datos del turno activo
+const turnoActual = ref({
+  numero: 28,
+  sede: 'Abitab, Aparicio Saravia 598'
+})
+const proximosNumeros = ref([27, 28, 29, 30, 31])
+
 const sedes = ref([
-  { id: 1, nombre: 'Abitab', estado: 'Concurrido', turnos: 18, direccion: 'Av. 18 de Julio 1234', horarios: '09:00 - 18:00', telefono: '2900 0000', redes: '@abitab_oficial' },
+  { id: 1, nombre: 'Abitab', estado: 'Concurrido', turnos: 18, direccion: 'Aparicio Saravia 598', horarios: '09:00 - 18:00', telefono: '2900 0000', redes: '@abitab_oficial' },
   { id: 2, nombre: 'Abitab centro', estado: 'Muy concurrido', turnos: 30, direccion: 'Plaza Independencia 567', horarios: '08:30 - 19:00', telefono: '2901 1111', redes: '@abitab_centro' },
   { id: 3, nombre: 'Abitab Dorado', estado: 'Poco concurrido', turnos: 13, direccion: 'Av. Rivera 2420', horarios: '09:00 - 19:00', telefono: '2902 3333', redes: '@abitab_dorado' },
   { id: 4, nombre: 'Redpagos Terminal', estado: 'Poco concurrido', turnos: 8, direccion: 'Tres Cruces Nivel 2', horarios: '07:00 - 22:00', telefono: '2903 4444', redes: '@redpagos_terminal' },
@@ -227,42 +328,61 @@ const abrirDetalle = (sede) => {
   mostrarDetalle.value = true
 }
 
-// Cierra el modal de detalle y abre el modal de confirmación
 const solicitarTurno = () => {
   mostrarDetalle.value = false
   mostrarConfirmacionTurno.value = true
 }
 
-// Regresa desde la confirmación al modal de detalle
 const volverADetalle = () => {
   mostrarConfirmacionTurno.value = false
   mostrarDetalle.value = true
 }
 
-// Acción del botón ACEPTAR turno
-const confirmarTurno = async () => {
-  procesandoTurno.value = true
-  try {
-    // 1. Cierra la ventana emergente inmediatamente
-    mostrarConfirmacionTurno.value = false
+const abrirMisTurnos = () => {
+  mostrarMisTurnos.value = true
+}
 
-    // 2. Muestra notificación si Quasar Notify está disponible
+const confirmarTurno = () => {
+  procesandoTurno.value = true
+  
+  setTimeout(() => {
+    procesandoTurno.value = false
+    mostrarConfirmacionTurno.value = false
+    
+    if (sedeSeleccionada.value) {
+      turnoActual.value = {
+        numero: 28,
+        sede: `${sedeSeleccionada.value.nombre}, ${sedeSeleccionada.value.direccion}`
+      }
+    }
+    
+    mostrarMisTurnos.value = true
+
     if ($q && typeof $q.notify === 'function') {$q.notify({
         type: 'positive',
-        message: `Turno confirmado para ${sedeSeleccionada.value?.nombre || 'la sede'}`
+        message: 'Turno confirmado correctamente'
       })
     }
+  }, 200)
+}
 
-    // 3. Navega a la ruta de Mis Turnos
-    await router.push('/misturnos')
-  } catch (error) {
-    console.error('Error al confirmar el turno:', error)
-  } finally {
-    procesandoTurno.value = false
+// Abre la confirmación de cancelación
+const pedirConfirmacionCancelar = () => {
+  confirmarCancelarTurno.value = true
+}
+
+// Se ejecuta al confirmar la cancelación
+const cancelarTurnoConfirmado = () => {
+  confirmarCancelarTurno.value = false
+  mostrarMisTurnos.value = false
+  
+  if ($q && typeof $q.notify === 'function') {$q.notify({
+      type: 'warning',
+      message: 'El turno ha sido cancelado'
+    })
   }
 }
 
-// Color para los niveles de ocupación
 const colorEstado = (estado) => {
   switch (estado) {
     case 'Poco concurrido': return 'positive'
@@ -272,12 +392,11 @@ const colorEstado = (estado) => {
   }
 }
 
-// Color para el borde izquierdo en las tarjetas
 const colorEstadoHex = (estado) => {
   switch (estado) {
-    case 'Poco concurrido': return '#21ba45'    // Verde
-    case 'Concurrido': return '#f2c037'   // Amarillo
-    case 'Muy concurrido': return '#c10015'    // Rojo
+    case 'Poco concurrido': return '#21ba45'
+    case 'Concurrido': return '#f2c037'
+    case 'Muy concurrido': return '#c10015'
     default: return '#9e9e9e'
   }
 }
@@ -293,6 +412,7 @@ const colorEstadoHex = (estado) => {
 .card-redondeada { border-radius: 15px; overflow: hidden; }
 .radius-16 { border-radius: 16px; }
 .radius-12 { border-radius: 12px; }
+.radius-8 { border-radius: 8px; }
 .btn-action { border-radius: 10px; }
 
 .fondo {
