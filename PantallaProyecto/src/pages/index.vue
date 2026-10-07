@@ -4,7 +4,7 @@ meta:
 </route>
 
 <template>
-  <q-page class="bg-grey-2 q-pa-md">
+  <q-page class="fondo q-pa-md">
     <div class="max-width-container margin-auto q-pt-md">
       
       <!-- CABECERA: BOTÓN MIS TURNOS & LOGOUT -->
@@ -13,6 +13,7 @@ meta:
           color="primary"
           icon="confirmation_number"
           label="Mis turnos"
+          style="box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
           unelevated
           to="/misturnos"
         />
@@ -20,7 +21,7 @@ meta:
           flat
           round
           dense
-          color="grey-7"
+          color="white"
           icon="logout"
           @click="confirmarLogout = true"
         >
@@ -293,4 +294,8 @@ const colorEstadoHex = (estado) => {
 .radius-16 { border-radius: 16px; }
 .radius-12 { border-radius: 12px; }
 .btn-action { border-radius: 10px; }
+
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
+}
 </style>
