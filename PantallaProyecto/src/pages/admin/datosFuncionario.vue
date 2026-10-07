@@ -1,6 +1,3 @@
-Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron las funciones `fetch` para realizar el CRUD completo (`GET`, `POST`, `PUT`, `DELETE`), incluyendo estados de carga (`cargando`, `guardando`) y el chip estilizado con el icono de caja registradora (`point_of_sale`) que solicitaste anteriormente.
-
-```html
 <template>
   <q-page class="fondo q-pa-md flex justify-center">
     <div style="width: 100%; max-width: 520px;">
@@ -56,7 +53,7 @@ Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron la
               </q-item-label>
               
               <q-item-label class="text-body2 text-weight-bold text-grey-8 flex items-center gap-1 q-mt-xs">
-                <!-- Chip de Caja con icono pequeño -->
+                <!-- Chip de Caja con icono de caja registradora -->
                 <q-chip
                   dense
                   color="blue-1"
@@ -106,7 +103,7 @@ Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron la
       </q-card>
     </div>
 
-    <!-- Ventana de diálogo moderna -->
+    <!-- Ventana de diálogo -->
     <q-dialog v-model="mostrarDialogo" persistent>
       <q-card style="width: 100%; max-width: 440px;" class="radius-16 q-pa-sm">
 
@@ -119,7 +116,7 @@ Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron la
           </div>
         </q-card-section>
 
-        <!-- Formulario accesibilidad y alto contraste -->
+        <!-- Formulario -->
         <q-card-section class="q-gutter-y-md q-pt-md">
           <q-input
             v-model="nuevoNombre"
@@ -190,6 +187,13 @@ Aquí tienes el componente `datos-funcionario.vue` actualizado. Se integraron la
             <template #prepend>
               <q-icon name="point_of_sale" color="primary" size="22px" />
             </template>
+            <template #no-option>
+              <q-item>
+                <q-item-section class="text-italic text-grey">
+                  No hay cajas disponibles
+                </q-item-section>
+              </q-item>
+            </template>
           </q-select>
         </q-card-section>
 
@@ -245,9 +249,18 @@ const funcionarioEditando = ref(null)
 
 const API_URL = 'http://localhost:3000/api/funcionarios'
 
+// Cajas disponibles filtradas dinámicamente
 const opcionesCajas = computed(() => {
-  const total = sucursalStore.cantidadCajas || 4
-  return Array.from({ length: total }, (_, i) => i + 1)
+  const totalCajas = sucursalStore.cantidadCajas || 4
+  const todasLasCajas = Array.from({ length: totalCajas }, (_, i) => i + 1)
+
+  // Obtener las cajas ocupadas por otros funcionarios
+  const cajasOcupadas = funcionarios.value
+    .filter(f => !funcionarioEditando.value || f.id !== funcionarioEditando.value.id)
+    .map(f => Number(f.caja))
+
+  // Retornar solo las cajas que no están en uso (o la del funcionario actual si edita)
+  return todasLasCajas.filter(caja => !cajasOcupadas.includes(caja))
 })
 
 // GET: Obtener lista de funcionarios
@@ -272,6 +285,8 @@ const obtenerFuncionarios = async () => {
 
 // POST / PUT: Crear o actualizar funcionario
 const guardarFuncionario = async () => {
+  if (!nuevaCaja.value) return
+
   guardando.value = true
   try {
     const payload = {
@@ -339,6 +354,12 @@ const eliminarFuncionario = async (funcionario) => {
 
 const abrirNuevo = () => {
   limpiarFormulario()
+  
+  // Asignar automáticamente la primera caja disponible si existe
+  if (opcionesCajas.value.length > 0) {
+    nuevaCaja.value = opcionesCajas.value[0]
+  }
+
   mostrarDialogo.value = true
 }
 
@@ -406,5 +427,3 @@ onMounted(async () => {
   background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
 </style>
-
-```
