@@ -87,7 +87,19 @@ export default defineConfig(ctx => {
     devServer: {
       // vueDevtools: true,
       // https: true,
-      open: true // opens browser window automatically
+      open: true,
+      //Proxy de desarrollo: cualquier pedido que el navegador haga a "/api/...
+      //lo redirige internamente al backend real (localhost:3000), sin que el
+      //navegador se entere de que son dos puertos distintos. Así evitamos que
+      //bloquee la comunicación por CORS mientras desarrollamos. Solo funciona
+      //en modo dev (quasar dev) — en producción esa unificación la hace Nginx
+      proxy: {
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+        },
+      },
+ // opens browser window automatically
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
