@@ -182,7 +182,7 @@ meta:
 
         <q-card-actions align="around">
           <q-btn flat label="Cancelar" color="grey-8" v-close-popup />
-          <q-btn label="Salir" color="negative" unelevated to="/login" />
+          <q-btn label="Salir" color="negative" unelevated @click="cerrarSesion" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -194,9 +194,11 @@ meta:
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useAuthStore } from '../stores/auth-store';
 
 const $q = useQuasar()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const busqueda = ref('')
 const sedeSeleccionada = ref(null)
@@ -271,6 +273,11 @@ const colorEstadoHex = (estado) => {
     case 'Muy concurrido': return '#c10015'
     default: return '#9e9e9e'
   }
+}
+
+const cerrarSesion = () => {
+  authStore.cerrarSesion()
+  router.push('/login')
 }
 </script>
 

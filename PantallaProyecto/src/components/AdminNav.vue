@@ -41,11 +41,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth-store';
+
 
 const router = useRouter()
+const authStore = useAuthStore()
 const mostrarConfirmacion = ref(false)
 
 const cerrarSesion = () => {
+  authStore.cerrarSesion()
   mostrarConfirmacion.value = false
   router.push('/login')
 }

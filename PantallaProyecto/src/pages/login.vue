@@ -83,6 +83,7 @@ meta:
           unelevated
           class="full-width q-py-sm"
           style="border-radius: 10px;"
+          :loading="cargando"
           @click="iniciarSesion"
         />
       </q-card-section>
@@ -110,8 +111,12 @@ meta:
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import {useQuasar} from 'quasar'
+import { useAuthStore } from '../stores/auth-store';
 
 const router = useRouter()
+const $q = useQuasar ()
+const authStore = useAuthStore()
 
 // Estado del Switch: false = Ciudadano, true = Funcionario
 const esFuncionario = ref(false)
@@ -119,6 +124,8 @@ const esFuncionario = ref(false)
 // Campos del formulario
 const identificador = ref('')
 const password = ref('')
+//controla el spinner del boton mientras ses espera respuesta del backend
+const cargando = ref(false)
 
 // Limpia el identificador al cambiar de modo para evitar confusiones de datos
 watch(esFuncionario, () => {
@@ -127,15 +134,49 @@ watch(esFuncionario, () => {
 })
 
 // Lógica para redirigir según el modo seleccionado
-const iniciarSesion = () => {
-  if (esFuncionario.value) {
-    // Redirige al panel de atención del funcionario
+const iniciarSesion = async () => {
+ cargando.value = true
+ try{
+  // manda el pedido al backend
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      identificador: identificador.value,
+      contrasena: password.value
+    })
+  })
+
+  const data = await response.json()
+
+  //si el backend respondió con un error, lo muestra y corta.
+  if(!response.ok){
+    $q.notify({type: 'negative', message: data.error || 'Error al iniciar sesión'})
+    return
+  }
+
+  //guarda el token y el rol en el store (y en localStorage) para que el resto de la app sepa que hay una sesión activa y quién es
+  authStore.guardarSesion(data.token, data.rol)
+
+  $q.notify({type: 'positive', message: data.mensaje})
+
+  //redirige según el rol que devolvió el backend.
+  if (data.rol === 'ADMIN') {
+    router.push ('/admin')
+  } else if (data.rol === 'FUNCIONARIO') {
     router.push('/funcionario')
   } else {
-    // Redirige al catálogo principal del ciudadano
     router.push('/')
   }
+  //atrapa fallas de conexión real
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error)
+    $q.notify({type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    cargando.value = false
+  }
 }
+
 </script>
 
 <style scoped>
