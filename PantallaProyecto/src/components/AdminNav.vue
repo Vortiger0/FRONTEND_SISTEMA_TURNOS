@@ -4,7 +4,7 @@
     <!-- lo que hace toolbar es alinear todos los elementos en una fila horizontal -->
     <q-toolbar>
       <q-toolbar-title class="text-weight-bold" style="flex: none;">
-        Abitab Centro - Admin
+        {{ authStore.sucursal }} - admin
       </q-toolbar-title>
 
       <q-btn flat label="Inicio" to="/admin" />
