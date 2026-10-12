@@ -132,11 +132,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/totem': RouteRecordInfo<
-      '/totem',
-      '/totem',
-      Record<never, never>,
-      Record<never, never>,
+    '/totem/[sucursalId]': RouteRecordInfo<
+      '/totem/[sucursalId]',
+      '/totem/:sucursalId',
+      { sucursalId: ParamValue<true> },
+      { sucursalId: ParamValue<false> },
       | never
     >,
   }
@@ -269,13 +269,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/totem.vue': {
+    'src/pages/totem/[sucursalId].vue': {
       routes:
-        | '/totem'
+        | '/totem/[sucursalId]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'sucursalId'
     }
   }
 
