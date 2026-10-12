@@ -50,7 +50,7 @@ meta:
               <div class="row items-center justify-center q-gutter-x-xs">
                 <q-icon name="fiber_manual_record" :color="colorEstado(sede.estado)" size="12px" />
                 <span class="text-caption text-weight-medium">
-                  {{ sede.estado }}: {{ sede.turnos }} turnos
+                  {{ textoVisible(sede.estado) }}: {{ sede.turnos }} turnos
                 </span>
               </div>
             </q-card-section>
@@ -191,7 +191,7 @@ meta:
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store';
@@ -209,13 +209,38 @@ const mostrarConfirmacionTurno = ref(false)
 const confirmarLogout = ref(false)
 const procesandoTurno = ref(false)
 
-const sedes = ref([
-  { id: 1, nombre: 'Abitab', estado: 'Concurrido', turnos: 18, direccion: 'Aparicio Saravia 598', horarios: '09:00 - 18:00', telefono: '2900 0000', redes: '@abitab_oficial' },
-  { id: 2, nombre: 'Abitab centro', estado: 'Muy concurrido', turnos: 30, direccion: 'Plaza Independencia 567', horarios: '08:30 - 19:00', telefono: '2901 1111', redes: '@abitab_centro' },
-  { id: 3, nombre: 'Abitab Dorado', estado: 'Poco concurrido', turnos: 13, direccion: 'Av. Rivera 2420', horarios: '09:00 - 19:00', telefono: '2902 3333', redes: '@abitab_dorado' },
-  { id: 4, nombre: 'Redpagos Terminal', estado: 'Poco concurrido', turnos: 8, direccion: 'Tres Cruces Nivel 2', horarios: '07:00 - 22:00', telefono: '2903 4444', redes: '@redpagos_terminal' },
-  { id: 5, nombre: 'Farmacia Hospital', estado: 'Concurrido', turnos: 15, direccion: 'Av. Italia 2870', horarios: '08:00 - 20:00', telefono: '2487 0000', redes: '@farmacia_hospital' }
-])
+//array que contiene las sucursales
+const sedes = ref([])
+//llama al endpoint de las sucursales
+const cargarSucursales = async() => {
+  try {
+    const response = await fetch ('/api/sucursales')
+    const data = await response.json()
+
+    if(!response.ok) {
+      $q.notify({type: 'negative', message: 'No se pudieron cargar las sucursales' })
+      return
+    }
+    //el back devuelve cada sucursal con sus datos usando los nombres que el template ya espera
+    sedes.value = data.map((s)  => ({
+      id: s.id,
+      nombre: s.nombre,
+      estado: s.concurrencia,
+      turnos: s.turnosPendientes,
+      direccion: s.direccion,
+      organismo: s.organismo
+    })) 
+   } catch (error) {
+    console.error('Error al cargar sucursales:', error)
+    $q.notify({type: 'negative', message: 'No se pudo conectar con el servidor'})
+
+  }
+}
+
+//es un "hook" (gancho) de vue que ejecuta apenas la pantalla termina de cargar en el navegador
+onMounted(() => {
+  cargarSucursales()
+} )
 
 const sedesFiltradas = computed(() => {
   if (!busqueda.value) return sedes.value
@@ -239,38 +264,63 @@ const volverADetalle = () => {
   mostrarDetalle.value = true
 }
 
-const confirmarTurno = () => {
-  procesandoTurno.value = true
-  
-  setTimeout(() => {
-    procesandoTurno.value = false
-    mostrarConfirmacionTurno.value = false
-    
-    if ($q && typeof $q.notify === 'function') {$q.notify({
-        type: 'positive',
-        message: 'Turno confirmado correctamente'
-      })
-    }
+const confirmarTurno = async () => {
+ procesandoTurno.value = true
 
-    // Redirecciona directamente a la vista /misturnos
-    router.push('/misturnos')
-  }, 200)
+ try {
+  //manda el pedido al backend, el authorization lleva el token guardado en la store
+  // el body manda el id de la sucursal que la persona ya había elegido
+  const response = await fetch ('/api/turnos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authStore.token}`
+
+    },
+    body: JSON.stringify({ sucursalId: sedeSeleccionada.value.id })
+  })
+  
+  const data = await response.json()
+
+  if (!response.ok) {
+    $q.notify({ type: 'negative', message: data.error || 'No se pudo sacar el turno'})
+    return
+  }
+
+  mostrarConfirmacionTurno.value = false
+  $q.notify({type: 'positive', message: `Turno confirmado. Tu número es el ${data.numero}` })
+  router.push('/misturnos')
+  } catch (error) {
+    console.error('Error al sacar turno:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor'  })
+} finally {
+  procesandoTurno.value = false
+}
+}
+
+const textoVisible = (estado) => {
+  switch (estado) {
+    case 'Poco ocupado': return 'Poco concurrido'
+    case 'Ocupado': return 'Concurrido'
+    case 'Muy ocupado': return 'Muy concurrido'
+    default: return estado
+  }
 }
 
 const colorEstado = (estado) => {
   switch (estado) {
-    case 'Poco concurrido': return 'positive'
-    case 'Concurrido': return 'warning'
-    case 'Muy concurrido': return 'negative'
+    case 'Poco ocupado': return 'positive'
+    case 'Ocupado': return 'warning'
+    case 'Muy ocupado': return 'negative'
     default: return 'grey'
   }
 }
 
 const colorEstadoHex = (estado) => {
   switch (estado) {
-    case 'Poco concurrido': return '#21ba45'
-    case 'Concurrido': return '#f2c037'
-    case 'Muy concurrido': return '#c10015'
+    case 'Poco ocupado': return '#21ba45'
+    case 'Ocupado': return '#f2c037'
+    case 'Muy ocupado': return '#c10015'
     default: return '#9e9e9e'
   }
 }
