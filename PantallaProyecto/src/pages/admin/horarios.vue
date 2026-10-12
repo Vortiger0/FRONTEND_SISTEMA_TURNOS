@@ -1,3 +1,9 @@
+<route lang="yaml">
+meta:
+  requiereAuth: true
+  roles: ["ADMIN"]
+</route>
+
 <template>
   <q-page class="fondo q-pa-md flex justify-center">
     <div style="width: 100%; max-width: 500px;">

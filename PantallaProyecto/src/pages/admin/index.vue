@@ -1,3 +1,9 @@
+<route lang="yaml">
+meta:
+  requiereAuth: true
+  roles: ["ADMIN"]
+</route>
+
 <template>
   <!-- q-pa-md le da un padding parejo a toda la página -->
   <q-page class="fondo q-pa-md flex justify-center flex-center q-pt-xl">

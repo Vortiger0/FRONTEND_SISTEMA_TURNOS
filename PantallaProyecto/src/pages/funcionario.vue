@@ -1,5 +1,11 @@
 <route lang="yaml">
 meta:
+  requiereAuth: true
+  roles: ["FUNCIONARIO"]
+</route>
+
+<route lang="yaml">
+meta:
   layout: false
 </route>
 
