@@ -10,6 +10,11 @@ export const useAuthStore = defineStore('auth', {
     rol: localStorage.getItem('rol') || null,
     sucursal: localStorage.getItem('sucursal') || null,
   }),
+  //esto lo usa el guard de router/index.ts para decidir si dejar pasar a una pag protegida o redirigir a /login
+  //si hay token guardado da true, si token es null da false
+  getters: {
+    estaAutenticado: (state) => !!state.token,
+  },
   actions: {
     //se llama después de un login exitoso. Guarda los tres datos en el estado del store (para que el resto de la app los use de forma reactiva)
     // como en el localstorage (para que persistan si se recarga la pag). sucursal viene como null para ciudadano porque no pertenece a ninguna
