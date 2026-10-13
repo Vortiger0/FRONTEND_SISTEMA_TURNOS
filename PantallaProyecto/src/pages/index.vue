@@ -1,7 +1,7 @@
 <route lang="yaml">
 meta:
   requiereAuth: true
-  roles: ["CIUDADANO"]
+  roles: ["CIUDADAgitNO"]
 </route>
 
 <template>

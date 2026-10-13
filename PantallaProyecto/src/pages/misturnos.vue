@@ -1,8 +1,8 @@
 <route lang="yaml">
 meta:
   layout: false
-  requireAuth: true
-  roles: [CIUDADANO]
+  requiereAuth: true
+  roles: ["CIUDADANO"]
 </route>
 
 <template>
@@ -47,23 +47,23 @@ meta:
                 <!-- DETALLES SUCURSAL Y SERVICIO -->
                 <div class="col-8">
                   <div class="row items-center q-gutter-x-xs text-caption text-bold text-primary text-uppercase">
-                    <q-icon :name="turno.icono || 'storefront'" size="16px" />
-                    <span>{{ turno.sucursal }}</span>
+                    <q-icon name="storefront" size="16px" />
+                    <span>{{ turno.sucursal?.nombre || 'Sucursal' }}</span>
                   </div>
                   <div class="text-subtitle1 text-weight-bolder text-grey-9 q-mt-xs">
-                    {{ turno.servicio }}
+                    {{ turno.sucursal?.organismo || 'Atención Presencial' }}
                   </div>
                   <div class="text-caption text-grey-7">
-                    <q-icon name="place" size="14px" class="q-mr-xs" />
-                    {{ turno.direccion }}
+                    <q-icon name="schedule" size="14px" class="q-mr-xs" />
+                    Emitido: {{ formatearHora(turno.creadoEn) }}
                   </div>
                 </div>
 
                 <!-- NÚMERO DE TURNO -->
                 <div class="col-4 text-right">
                   <q-badge
-                    :color="turno.estado === 'Llamando' ? 'positive' : 'blue-2'"
-                    :text-color="turno.estado === 'Llamando' ? 'white' : 'primary'"
+                    :color="turno.estado === 'EN_ATENCION' ? 'positive' : 'blue-2'"
+                    :text-color="turno.estado === 'EN_ATENCION' ? 'white' : 'primary'"
                     class="q-px-md q-py-xs text-h6 text-weight-bolder radius-12 font-mono"
                   >
                     #{{ turno.numero }}
@@ -120,10 +120,10 @@ meta:
             </div>
 
             <q-badge
-              :color="turnoSeleccionado.estado === 'Llamando' ? 'positive' : 'primary'"
+              :color="turnoSeleccionado.estado === 'EN_ATENCION' ? 'positive' : 'primary'"
               class="q-px-lg q-py-xs text-caption text-weight-bold badge-redondeado q-mb-md"
             >
-              {{ turnoSeleccionado.estado }}
+              {{ turnoSeleccionado.estado === 'EN_ATENCION' ? 'En Atención' : 'Activo' }}
             </q-badge>
 
             <q-separator class="q-my-md" />
@@ -132,19 +132,15 @@ meta:
             <div class="text-left q-gutter-y-sm">
               <div class="row items-center justify-between">
                 <span class="text-caption text-grey-7">Sucursal:</span>
-                <span class="text-subtitle2 text-weight-bold text-grey-9">{{ turnoSeleccionado.sucursal }}</span>
+                <span class="text-subtitle2 text-weight-bold text-grey-9">{{ turnoSeleccionado.sucursal?.nombre }}</span>
               </div>
               <div class="row items-center justify-between">
-                <span class="text-caption text-grey-7">Dirección:</span>
-                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.direccion }}</span>
-              </div>
-              <div class="row items-center justify-between">
-                <span class="text-caption text-grey-7">Servicio:</span>
-                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.servicio }}</span>
+                <span class="text-caption text-grey-7">Organismo:</span>
+                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.sucursal?.organismo }}</span>
               </div>
               <div class="row items-center justify-between">
                 <span class="text-caption text-grey-7">Hora de emisión:</span>
-                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.horaEmision }}</span>
+                <span class="text-caption text-weight-bold text-grey-8">{{ formatearHora(turnoSeleccionado.creadoEn) }}</span>
               </div>
             </div>
 
@@ -173,7 +169,7 @@ meta:
         </q-card>
       </q-dialog>
 
-      <!-- 2. DIÁLOGO DE CONFIRMACIÓN DE CANCELACIÓN (COMPONENTIZADO) -->
+      <!-- 2. DIÁLOGO DE CONFIRMACIÓN DE CANCELACIÓN -->
       <q-dialog v-model="modalConfirmarCancelacion" persistent>
         <q-card style="width: 100%; max-width: 380px;" class="radius-16 text-center q-pa-sm">
           <q-card-section class="q-pt-md">
@@ -182,7 +178,7 @@ meta:
               ¿Cancelar Turno?
             </div>
             <div class="text-body2 text-grey-7 q-mt-xs" v-if="turnoSeleccionado">
-              ¿Estás seguro de que deseas cancelar el turno <strong>#{{ turnoSeleccionado.numero }}</strong> en <strong>{{ turnoSeleccionado.sucursal }}</strong>?
+              ¿Estás seguro de que deseas cancelar el turno <strong>#{{ turnoSeleccionado.numero }}</strong> en <strong>{{ turnoSeleccionado.sucursal?.nombre }}</strong>?
             </div>
           </q-card-section>
 
@@ -199,6 +195,7 @@ meta:
               label="Sí, cancelar"
               color="negative"
               class="text-bold radius-8 q-px-md"
+              :loading="cargandoCancelacion"
               @click="ejecutarCancelacion"
             />
           </q-card-actions>
@@ -210,38 +207,56 @@ meta:
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from '../stores/auth-store'
 
 const router = useRouter()
+const $q = useQuasar()
+const authStore = useAuthStore()
 
-// LISTA DE TURNOS
-const misTurnos = ref([
-  {
-    id: 1,
-    sucursal: 'Abitab Centro',
-    direccion: 'Aparicio Saravia 598',
-    servicio: 'Cobros y Retiros',
-    numero: 28,
-    icono: 'storefront',
-    estado: 'En Espera',
-    horaEmision: '14:32 hs'
-  },
-  {
-    id: 2,
-    sucursal: 'Farmacia Hospital',
-    direccion: 'Av. Brasil 1234',
-    servicio: 'Entrega de Medicamentos',
-    numero: 14,
-    icono: 'local_pharmacy',
-    estado: 'En Espera',
-    horaEmision: '14:45 hs'
-  }
-])
-
+const misTurnos = ref([])
 const modalDetalle = ref(false)
 const modalConfirmarCancelacion = ref(false)
 const turnoSeleccionado = ref(null)
+const cargandoCancelacion = ref(false)
+
+// Función auxiliar para formatear la fecha ISO que viene del backend a hora legible (ej: 14:32 hs)
+const formatearHora = (fechaIso) => {
+  if (!fechaIso) return ''
+  const fecha = new Date(fechaIso)
+  return fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' hs'
+}
+
+// Cargar turnos activos del ciudadano autenticado
+const cargarMisTurnos = async () => {
+  try {
+    const response = await fetch('/api/turnos/mis-turnos', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'No se pudieron cargar tus turnos' })
+      return
+    }
+
+    misTurnos.value = data
+  } catch (error) {
+    console.error('Error al conectar con el servidor:', error)
+    $q.notify({ type: 'negative', message: 'Error de conexión con el servidor' })
+  }
+}
+
+onMounted(() => {
+  cargarMisTurnos()
+})
 
 const abrirDetalle = (turno) => {
   turnoSeleccionado.value = turno
@@ -249,25 +264,45 @@ const abrirDetalle = (turno) => {
 }
 
 const solicitarCancelacion = () => {
-  // Abrimos directamente el diálogo de confirmación escrito en el template
   modalConfirmarCancelacion.value = true
 }
 
-const ejecutarCancelacion = () => {
+const ejecutarCancelacion = async () => {
   if (!turnoSeleccionado.value) return
 
   const targetId = turnoSeleccionado.value.id
+  cargandoCancelacion.value = true
 
-  // 1. Ocultar los dos modales
-  modalConfirmarCancelacion.value = false
-  modalDetalle.value = false
+  try {
+    const response = await fetch(`/api/turnos/${targetId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
 
-  // 2. Remover el turno filtrando el array reactivo
-  misTurnos.value = misTurnos.value.filter(t => t.id !== targetId)
-  turnoSeleccionado.value = null
+    const data = await response.json()
 
-  // 3. Redirigir a la pantalla inicial '/'
-  router.push('/')
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'No se pudo cancelar el turno' })
+      return
+    }
+
+    $q.notify({ type: 'positive', message: data.mensaje || 'Turno cancelado correctamente' })
+
+    // Ocultar modales y actualizar listado reactivo
+    modalConfirmarCancelacion.value = false
+    modalDetalle.value = false
+    misTurnos.value = misTurnos.value.filter(t => t.id !== targetId)
+    turnoSeleccionado.value = null
+
+  } catch (error) {
+    console.error('Error al cancelar el turno:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    cargandoCancelacion.value = false
+  }
 }
 </script>
 
