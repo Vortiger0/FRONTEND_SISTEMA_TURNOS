@@ -18,18 +18,33 @@ export default defineRouter(({ store }) => {
       return next({ path: '/login', replace: true })
     }
 
-    // 2. Si el usuario YA está autenticado e intenta entrar a /login
-    if (to.path === '/login' && authStore.estaAutenticado) {
-      return next({ path: '/', replace: true })
+    // 2. Si el usuario YA está autenticado e intenta entrar a /login o /registro
+    if ((to.path === '/login' || to.path === '/registro') && authStore.estaAutenticado) {
+      const destinoPorRol: Record<string, string> = {
+        ADMIN: '/admin',
+        FUNCIONARIO: '/funcionario',
+        CIUDADANO: '/',
+      }
+      const destino = destinoPorRol[authStore.rol ?? ''] || '/'
+      return next({ path: destino, replace: true })
     }
 
     // 3. Control por roles (si la ruta define meta.roles)
     if (to.meta.roles && Array.isArray(to.meta.roles)) {
       if (!to.meta.roles.includes(authStore.rol)) {
-        return next({ path: '/', replace: true })
-      }
-    }
+        const destinoPorRol: Record<string, string> = {
+          ADMIN: '/admin',
+          FUNCIONARIO: '/funcionario',
+          CIUDADANO: '/',
+        }
+        const destino = destinoPorRol[authStore.rol ?? ''] || '/login'
 
+        if (to.path === destino) {
+          return next()
+        }
+        return next({ path: destino, replace: true})
+    }
+  }
     next()
   })
 
