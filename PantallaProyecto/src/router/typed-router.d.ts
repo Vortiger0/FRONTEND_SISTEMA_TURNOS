@@ -118,6 +118,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/postlogin': RouteRecordInfo<
+      '/postlogin',
+      '/postlogin',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/registro': RouteRecordInfo<
       '/registro',
       '/registro',
@@ -248,6 +255,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/pantalla-tv.vue': {
       routes:
         | '/pantalla-tv'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/postlogin.vue': {
+      routes:
+        | '/postlogin'
       views:
         | never
       pathParamNames:
