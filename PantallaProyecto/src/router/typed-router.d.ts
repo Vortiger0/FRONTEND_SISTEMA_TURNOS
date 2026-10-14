@@ -104,13 +104,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/misturnos': RouteRecordInfo<
-      '/misturnos',
-      '/misturnos',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/pantalla-tv': RouteRecordInfo<
       '/pantalla-tv',
       '/pantalla-tv',
@@ -232,14 +225,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/login.vue': {
       routes:
         | '/login'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/misturnos.vue': {
-      routes:
-        | '/misturnos'
       views:
         | never
       pathParamNames:

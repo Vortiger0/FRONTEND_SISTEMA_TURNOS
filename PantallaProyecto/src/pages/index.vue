@@ -14,7 +14,7 @@ meta:
           icon="confirmation_number"
           unelevated
           class="btn-mis-turnos-blanco text-bold radius-12 q-px-md"
-          to="/misturnos"
+          @click="mostrarMisturnos = true"
         />
 
         <q-btn
@@ -187,6 +187,201 @@ meta:
       </q-card>
     </q-dialog>
 
+    <!-- 4. vista de mis turnos (ventana emergente)-->
+     <q-dialog v-model="mostrarMisturnos">
+      <q-card class="q-pa-md max-width-detalle width-100 radius-16">
+        <div class="row justify-between items-center q-mb-md">
+          <div class="text-h6 text-weight-bold text-uppercase text-grey-9">
+            Mis Turnos
+          </div>
+
+          <q-btn flat round dense icon="close" color="grey-7" v-close-popup />
+        </div>
+
+        <!-- Contenido de la vista detallada de mis turnos -->
+         <div class="q-pt-xs">
+         <Misturnos 
+         @cerrar="mostrarMisturnos = false" 
+         @seleccionarTurno="alSeleccionarTurno"
+         />
+
+          <div class="lista-turnos">
+            <div class="q-pa-md">
+              <div v-if="misTurnos && misTurnos.length > 0" class="q-gutter-y-sm">
+            
+              <q-card
+              v-for="(turno, index) in misTurnos"
+              :key="turno.id || index"
+              v-ripple
+              flat
+              bordered
+              class="card-turno cursor-pointer radius-16 q-pa-sm"
+              @click="abrirDetalleTurno(turno)"
+              >
+              <q-card-section class="row items-center justify-between q-py-xs">
+                <!-- DETALLES SUCURSAL Y SERVICIO -->
+                <div class="col-8">
+                  <div class="row items-center q-gutter-x-xs text-caption text-bold text-primary text-uppercase">
+                    <q-icon :name="turno.icono || 'storefront'" size="16px" />
+                    <span>{{ turno.sucursal }}</span>
+                  </div>
+                  <div class="text-subtitle1 text-weight-bolder text-grey-9 q-mt-xs">
+                    {{ turno.servicio }}
+                  </div>
+                  <div class="text-caption text-grey-7">
+                    <q-icon name="place" size="14px" class="q-mr-xs" />
+                    {{ turno.direccion }}
+                  </div>
+                </div>
+
+                <!-- NÚMERO DE TURNO -->
+                <div class="col-4 text-right">
+                  <q-badge
+                    :color="turno.estado === 'Llamando' ? 'positive' : 'blue-2'"
+                    :text-color="turno.estado === 'Llamando' ? 'white' : 'primary'"
+                    class="q-px-md q-py-xs text-h6 text-weight-bolder radius-12 font-mono"
+                  >
+                    #{{ turno.numero }}
+                  </q-badge>
+                  <div class="text-caption text-weight-bold text-grey-6 q-mt-xs">
+                    Toca para ver
+                  </div>
+                </div>
+              </q-card-section>
+              </q-card>
+            </div>
+          
+
+           <!-- MENSAJE SI NO HAY TURNOS -->
+           <div v-else class="text-center q-py-xl">
+            <q-icon name="event_busy" color="grey-5" size="4rem" />
+            <div class="text-h6 text-grey-7 text-weight-bold q-mt-md">
+              No tienes turnos activos
+            </div>
+            <div class="text-caption text-grey-6 q-mb-lg">
+              Saca un turno desde el catálogo principal
+            </div>
+            <q-btn
+              label="SACAR TURNO"
+              color="primary"
+              unelevated
+              class="radius-12 text-bold q-px-lg"
+              to="/"
+            />
+            </div>
+          </div>
+          </div>
+        </div>
+
+      </q-card>
+    </q-dialog>
+
+      <!-- 1. DIÁLOGO DETALLE DEL TURNO -->
+      <q-dialog v-model="modalDetalle">
+        <q-card style="width: 100%; max-width: 400px;" class="radius-20 overflow-hidden">
+          
+          <!-- ENCABEZADO DEL DETALLE -->
+          <q-card-section class="bg-grey-2 row items-center justify-between q-px-md q-py-sm bordered-bottom">
+            <div class="text-subtitle2 text-weight-bold text-grey-8 text-uppercase">
+              Detalle del Turno
+            </div>
+            <q-btn icon="close" flat round dense v-close-popup />
+          </q-card-section>
+
+          <q-card-section v-if="turnoSeleccionado" class="text-center q-pa-lg">
+            <!-- NÚMERO DESTACADO -->
+            <div class="text-caption text-weight-bold text-grey-7 text-uppercase">
+              Número de atención
+            </div>
+            <div class="text-weight-bolder text-primary numero-modal font-mono q-my-xs">
+              #{{ turnoSeleccionado.numero }}
+            </div>
+
+            <q-badge
+              :color="turnoSeleccionado.estado === 'Llamando' ? 'positive' : 'primary'"
+              class="q-px-lg q-py-xs text-caption text-weight-bold badge-redondeado q-mb-md"
+            >
+              {{ turnoSeleccionado.estado }}
+            </q-badge>
+
+            <q-separator class="q-my-md" />
+
+            <!-- INFORMACIÓN DE LA SUCURSAL -->
+            <div class="text-left q-gutter-y-sm">
+              <div class="row items-center justify-between">
+                <span class="text-caption text-grey-7">Sucursal:</span>
+                <span class="text-subtitle2 text-weight-bold text-grey-9">{{ turnoSeleccionado.sucursal }}</span>
+              </div>
+              <div class="row items-center justify-between">
+                <span class="text-caption text-grey-7">Dirección:</span>
+                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.direccion }}</span>
+              </div>
+              <div class="row items-center justify-between">
+                <span class="text-caption text-grey-7">Servicio:</span>
+                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.servicio }}</span>
+              </div>
+              <div class="row items-center justify-between">
+                <span class="text-caption text-grey-7">Hora de emisión:</span>
+                <span class="text-caption text-weight-bold text-grey-8">{{ turnoSeleccionado.horaEmision }}</span>
+              </div>
+            </div>
+
+            <q-banner rounded class="bg-blue-1 text-primary q-mt-lg text-left radius-12">
+              <template #avatar>
+                <q-icon name="info" color="primary" />
+              </template>
+              <div class="text-caption text-weight-bold">
+                Preséntate en sala unos minutos antes de que tu número sea llamado en pantalla.
+              </div>
+            </q-banner>
+          </q-card-section>
+
+          <!-- ACCIÓN CANCELAR -->
+          <q-card-actions align="center" class="q-pb-lg q-px-lg">
+            <q-btn
+              outline
+              color="negative"
+              label="CANCELAR ESTE TURNO"
+              icon="cancel"
+              class="full-width radius-12 text-bold q-py-sm"
+              @click="solicitarCancelacion"
+            />
+          </q-card-actions>
+
+        </q-card>
+      </q-dialog>
+
+      <!-- 2. DIÁLOGO DE CONFIRMACIÓN DE CANCELACIÓN (COMPONENTIZADO) -->
+      <q-dialog v-model="modalConfirmarCancelacion" persistent>
+        <q-card style="width: 100%; max-width: 380px;" class="radius-16 text-center q-pa-sm">
+          <q-card-section class="q-pt-md">
+            <q-icon name="warning" color="negative" size="50px" class="q-mb-sm" />
+            <div class="text-h6 text-weight-bold text-grey-9">
+              ¿Cancelar Turno?
+            </div>
+            <div class="text-body2 text-grey-7 q-mt-xs" v-if="turnoSeleccionado">
+              ¿Estás seguro de que deseas cancelar el turno <strong>#{{ turnoSeleccionado.numero }}</strong> en <strong>{{ turnoSeleccionado.sucursal }}</strong>?
+            </div>
+          </q-card-section>
+
+          <q-card-actions align="around" class="q-pb-md q-px-md">
+            <q-btn
+              flat
+              label="No, mantener"
+              color="grey-8"
+              class="text-bold"
+              v-close-popup
+            />
+            <q-btn
+              unelevated
+              label="Sí, cancelar"
+              color="negative"
+              class="text-bold radius-8 q-px-md"
+              @click="ejecutarCancelacion"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
   </q-page>
 </template>
 
@@ -203,11 +398,39 @@ const authStore = useAuthStore()
 const busqueda = ref('')
 const sedeSeleccionada = ref(null)
 
+const modalDetalle = ref(false)
+const modalConfirmarCancelacion = ref(false)
+const turnoSeleccionado =ref(null)
+
 // Variables de estado para los modales
 const mostrarDetalle = ref(false)
 const mostrarConfirmacionTurno = ref(false)
 const confirmarLogout = ref(false)
 const procesandoTurno = ref(false)
+const mostrarMisturnos = ref(false)
+
+const misTurnos = ref([
+  {
+    id: 1,
+    sucursal: 'Abitab Centro',
+    direccion: 'Aparicio Saravia 598',
+    servicio: 'Cobros y Retiros',
+    numero: 28,
+    icono: 'storefront',
+    estado: 'En Espera',
+    horaEmision: '14:32 hs'
+  },
+  {
+    id: 2,
+    sucursal: 'Farmacia Hospital',
+    direccion: 'Av. Brasil 1234',
+    servicio: 'Entrega de Medicamentos',
+    numero: 14,
+    icono: 'local_pharmacy',
+    estado: 'En Espera',
+    horaEmision: '14:45 hs'
+  }
+])
 
 //array que contiene las sucursales
 const sedes = ref([])
@@ -289,7 +512,7 @@ const confirmarTurno = async () => {
 
   mostrarConfirmacionTurno.value = false
   $q.notify({type: 'positive', message: `Turno confirmado. Tu número es el ${data.numero}` })
-  router.push('/misturnos')
+  mostrarMisturnos.value = true
   } catch (error) {
     console.error('Error al sacar turno:', error)
     $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor'  })
@@ -329,6 +552,37 @@ const cerrarSesion = () => {
   authStore.cerrarSesion()
   router.push('/login')
 }
+
+const solicitarCancelacion = () => {
+  modalDetalle.value = false
+  // Abrimos directamente el dialogo de confirmació escrito en el template
+  modalConfirmarCancelacion.value = true
+}
+
+const abrirDetalleTurno = (turno) => {
+  turnoSeleccionado.value = turno
+
+  mostrarMisturnos.value = false
+
+  modalDetalle.value = true
+}
+
+const ejecutarCancelacion = () => {
+  if (!turnoSeleccionado.value) return
+
+  const targetId = turnoSeleccionado.value.id
+
+  //1.Ocultar los dos modales
+  modalConfirmarCancelacion.value = false
+  modalDetalle.value = false
+
+  //2. remover el turno filtrando el array reactivo
+  misTurnos.value = misTurnos.value.filter(t => t.id !== targetId)
+  turnoSeleccionado.value = null
+
+  // 3. redirigir a la pantalla inicial '/'
+  router.push('/')
+}
 </script>
 
 <style scoped>
@@ -366,5 +620,56 @@ const cerrarSesion = () => {
 
 .btn-mis-turnos-blanco:active {
   transform: translateY(0);
+}
+
+.radius-20 {
+  border-radius: 20px;
+}
+
+.radius-16 {
+  border-radius: 16px;
+}
+
+.radius-12 {
+  border-radius: 12px;
+}
+
+.radius-8 {
+  border-radius: 8px;
+}
+
+.badge-redondeado {
+  border-radius: 50px !important;
+}
+
+.select-none {
+  user-select: none;
+}
+
+.letter-spacing-sm {
+  letter-spacing: 1px;
+}
+
+.font-mono {
+  font-family: monospace;
+}
+
+.bordered-bottom {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-turno {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.card-turno:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.numero-modal {
+  font-size: 4.5rem;
+  line-height: 1;
 }
 </style>
