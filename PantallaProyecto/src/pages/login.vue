@@ -111,11 +111,11 @@ meta:
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {useQuasar} from 'quasar'
+import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store';
 
 const router = useRouter()
-const $q = useQuasar ()
+const $q = useQuasar()
 const authStore = useAuthStore()
 
 // Estado del Switch: false = Ciudadano, true = Funcionario
@@ -124,7 +124,7 @@ const esFuncionario = ref(false)
 // Campos del formulario
 const identificador = ref('')
 const password = ref('')
-//controla el spinner del boton mientras ses espera respuesta del backend
+// Controla el spinner del botón mientras se espera respuesta del backend
 const cargando = ref(false)
 
 // Limpia el identificador al cambiar de modo para evitar confusiones de datos
@@ -133,50 +133,56 @@ watch(esFuncionario, () => {
   password.value = ''
 })
 
-// Lógica para redirigir según el modo seleccionado
+// Lógica para redirigir según el modo seleccionado y el flag de cambio de credenciales
 const iniciarSesion = async () => {
- cargando.value = true
- try{
-  // manda el pedido al backend
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      identificador: identificador.value,
-      contrasena: password.value
+  cargando.value = true
+  try {
+    // Manda el pedido al backend
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identificador: identificador.value,
+        contrasena: password.value
+      })
     })
-  })
 
-  const data = await response.json()
+    const data = await response.json()
 
-  //si el backend respondió con un error, lo muestra y corta.
-  if(!response.ok){
-    $q.notify({type: 'negative', message: data.error || 'Error al iniciar sesión'})
-    return
-  }
+    // Si el backend respondió con un error, lo muestra y corta
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'Error al iniciar sesión' })
+      return
+    }
 
-  //guarda el token y el rol en el store (y en localStorage) para que el resto de la app sepa que hay una sesión activa y quién es
-  authStore.guardarSesion(data.token, data.rol, data.sucursal)
+    // Guarda el token, rol, sucursal y el indicador de cambio de credenciales en el store (y localStorage)
+    authStore.guardarSesion(data.token, data.rol, data.sucursal, data.debeCambiarCredenciales)
 
-  $q.notify({type: 'positive', message: data.mensaje})
+    $q.notify({ type: 'positive', message: data.mensaje })
 
-  //redirige según el rol que devolvió el backend.
-  if (data.rol === 'ADMIN') {
-    router.push ('/admin')
-  } else if (data.rol === 'FUNCIONARIO') {
-    router.push('/funcionario')
-  } else {
-    router.push('/')
-  }
-  //atrapa fallas de conexión real
+    // Si el administrador debe cambiar sus credenciales, se le redirige obligatoriamente
+    if (data.debeCambiarCredenciales) {
+      router.push('/admin/cambiar-credenciales')
+      return
+    }
+
+    // Redirige según el rol que devolvió el backend si no requiere cambio
+    if (data.rol === 'ADMIN') {
+      router.push('/admin')
+    } else if (data.rol === 'FUNCIONARIO') {
+      router.push('/funcionario')
+    } else {
+      router.push('/')
+    }
+
+  // Atrapa fallas de conexión real
   } catch (error) {
     console.error('Error al iniciar sesión:', error)
-    $q.notify({type: 'negative', message: 'No se pudo conectar con el servidor' })
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
   } finally {
     cargando.value = false
   }
 }
-
 </script>
 
 <style scoped>

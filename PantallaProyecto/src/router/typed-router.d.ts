@@ -58,6 +58,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       Record<never, never>,
       | '/admin/'
+      | '/admin/cambiar-credenciales'
       | '/admin/datos-local'
       | '/admin/datosFuncionario'
       | '/admin/horarios'
@@ -65,6 +66,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/': RouteRecordInfo<
       '/admin/',
       '/admin',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/cambiar-credenciales': RouteRecordInfo<
+      '/admin/cambiar-credenciales',
+      '/admin/cambiar-credenciales',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -181,6 +189,7 @@ declare module 'vue-router/auto-routes' {
       routes:
         | '/admin'
         | '/admin/'
+        | '/admin/cambiar-credenciales'
         | '/admin/datos-local'
         | '/admin/datosFuncionario'
         | '/admin/horarios'
@@ -192,6 +201,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/index.vue': {
       routes:
         | '/admin/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/cambiar-credenciales.vue': {
+      routes:
+        | '/admin/cambiar-credenciales'
       views:
         | never
       pathParamNames:

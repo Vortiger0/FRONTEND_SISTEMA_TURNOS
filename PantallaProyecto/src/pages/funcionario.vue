@@ -25,48 +25,35 @@ meta:
           </q-btn>
         </q-card-section>
 
-        <!-- CAJA ASIGNADA AUTOMÁTICAMENTE (PARA QUE SOLO MUESTRE NÚMERO CAJA) -->
+        <!-- CAJA / INFORMACIÓN DEL FUNCIONARIO -->
         <q-card-section class="q-pt-sm text-center">
-          <div class="text-caption text-grey-7">Atendiendo en:</div>
+          <div class="text-caption text-grey-7">Estado de Atención</div>
           <div class="text-h6 text-primary text-weight-bold row items-center justify-center q-gutter-x-xs">
             <q-icon name="point_of_sale" size="22px" />
-            <span>{{ cajaAsignada.label }}</span>
+            <span>Panel Activo</span>
           </div>
         </q-card-section>
 
         <q-separator class="q-mx-md q-my-xs" />
 
-        <!-- ESTADO DE LOS TURNOS (ÚLTIMO FILA Y PENDIENTES) -->
+        <!-- ESTADO DE LOS TURNOS -->
         <q-card-section class="text-center q-py-md">
-          <div class="row q-col-gutter-sm justify-center q-mb-md">
-            
-            <!-- ÚLTIMO FILA -->
-            <div class="col-6">
-              <q-card flat bordered class="bg-grey-1 q-pa-xs">
-                <div class="text-caption text-grey-7">Último Fila</div>
-                <div class="text-subtitle1 text-weight-bold text-grey-9">
-                  #{{ cajaAsignada.ultimoFila }}
-                </div>
-              </q-card>
+          <div v-if="turnoActual">
+            <div class="text-subtitle2 text-grey-8 text-weight-bold q-mt-md text-uppercase">
+              TURNO ACTUALMENTE EN ATENCIÓN
             </div>
-
-            <!-- PENDIENTES -->
-            <div class="col-6">
-              <q-card flat bordered class="bg-red-1 q-pa-xs border-danger">
-                <div class="text-caption text-negative text-bold">Pendientes</div>
-                <div class="text-subtitle1 text-weight-bold text-negative">
-                  {{ cajaAsignada.ultimoFila - cajaAsignada.numeroAtendido }}
-                </div>
-              </q-card>
+            <div class="text-h1 text-weight-bolder text-primary q-my-xs">
+              #{{ turnoActual.numero }}
             </div>
-
+            <div class="text-caption text-grey-7">Estado: {{ turnoActual.estado }}</div>
           </div>
 
-          <div class="text-subtitle2 text-grey-8 text-weight-bold q-mt-md text-uppercase">
-            TURNO ACTUALMENTE EN ATENCIÓN
-          </div>
-          <div class="text-h1 text-weight-bolder text-primary q-my-xs">
-            #{{ cajaAsignada.numeroAtendido }}
+          <div v-else class="q-py-md">
+            <q-icon name="hourglass_empty" size="3rem" color="grey-5" />
+            <div class="text-subtitle1 text-grey-7 text-weight-medium q-mt-sm">
+              Fila vacía o ningún turno en atención
+            </div>
+            <div class="text-caption text-grey-6">Presiona "Siguiente" para llamar al próximo ciudadano.</div>
           </div>
         </q-card-section>
 
@@ -81,19 +68,20 @@ meta:
             size="lg"
             unelevated
             class="full-width q-py-sm text-bold"
-            :disabled="cajaAsignada.numeroAtendido >= cajaAsignada.ultimoFila"
-            @click="atenderSiguiente"
+            :loading="cargandoSiguiente"
+            @click="llamarSiguiente"
           />
 
           <!-- BOTÓN MARCAR AUSENTE / LIBERAR TURNO -->
           <q-btn
-            label="MARCAR AUSENTE / LIBERAR TURNO"
+            label="MARCAR AUSENTE"
             color="warning"
             text-color="dark"
             icon="person_off"
             outline
             class="full-width q-py-xs text-weight-bold"
-            :disabled="cajaAsignada.numeroAtendido >= cajaAsignada.ultimoFila"
+            :disabled="!turnoActual"
+            :loading="cargandoAusente"
             @click="marcarAusente"
           />
 
@@ -127,28 +115,87 @@ meta:
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
 
 const router = useRouter()
+const $q = useQuasar()
 const authStore = useAuthStore()
+
 const mostrarConfirmacion = ref(false)
+const turnoActual = ref(null)
+const cargandoSiguiente = ref(false)
+const cargandoAusente = ref(false)
 
-const cajaAsignada = ref({
-  id: 1,
-  label: 'Caja 1',
-  numeroAtendido: 1,
-  ultimoFila: 8
-})
+// Llamar al siguiente turno (cierra el actual si lo había y asigna el próximo)
+const llamarSiguiente = async () => {
+  cargandoSiguiente.value = true
+  try {
+    const response = await fetch('/api/funcionario/siguiente', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
 
-const atenderSiguiente = () => {
-  if (cajaAsignada.value.numeroAtendido < cajaAsignada.value.ultimoFila) {
-    cajaAsignada.value.numeroAtendido++
+    const data = await response.json()
+
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'Error al llamar al siguiente turno' })
+      return
+    }
+
+    // Contemplar el caso cuando la fila está vacía
+    if (data.mensaje && !data.id) {
+      turnoActual.value = null
+      $q.notify({ type: 'info', message: data.mensaje })
+      return
+    }
+
+    // Actualiza con el turno recibido completo
+    turnoActual.value = data
+    $q.notify({ type: 'positive', message: `Atendiendo turno N° ${data.numero}` })
+
+  } catch (error) {
+    console.error('Error de red:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    cargandoSiguiente.value = false
   }
 }
 
-const marcarAusente = () => {
-  if (cajaAsignada.value.numeroAtendido < cajaAsignada.value.ultimoFila) {
-    atenderSiguiente()
+// Marcar como ausente el turno en atención actual
+const marcarAusente = async () => {
+  if (!turnoActual.value) return
+
+  cargandoAusente.value = true
+  try {
+    const response = await fetch('/api/funcionario/ausente', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'Error al marcar como ausente' })
+      return
+    }
+
+    $q.notify({ type: 'warning', message: 'Turno marcado como ausente' })
+    
+    // Actualiza con el resultado devuelto (puede ser un nuevo turno asignado o vacío)
+    turnoActual.value = data.id ? data : null
+
+  } catch (error) {
+    console.error('Error de red:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    cargandoAusente.value = false
   }
 }
 

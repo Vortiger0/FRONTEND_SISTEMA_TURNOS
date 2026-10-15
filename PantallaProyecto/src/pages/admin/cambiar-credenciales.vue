@@ -19,7 +19,7 @@ meta:
       </q-card-section>
 
       <q-card-section class="q-gutter-y-md">
-        <!-- NUEVO USUARIO (Requerido por tu backend/Zod) -->
+        <!-- NUEVO USUARIO (Requerido por Zod en el backend, mín 3 caracteres) -->
         <q-input
           v-model="nuevoUsuario"
           label="Nuevo Nombre de Usuario"
@@ -31,7 +31,7 @@ meta:
           </template>
         </q-input>
 
-        <!-- NUEVA CONTRASEÑA -->
+        <!-- NUEVA CONTRASEÑA (Mín 8 caracteres) -->
         <q-input
           v-model="nuevaContrasena"
           label="Nueva Contraseña"
@@ -69,7 +69,7 @@ meta:
         />
       </q-card-section>
 
-      <!-- OPCIÓN DE SALIR / CERRAR SESIÓN SI DESEA -->
+      <!-- OPCIÓN DE SALIR / CERRAR SESIÓN -->
       <q-card-section class="text-center q-pt-none">
         <q-btn
           flat
@@ -107,6 +107,16 @@ const cambiarCredenciales = async () => {
     return
   }
 
+  if (nuevoUsuario.value.length < 3) {
+    $q.notify({ type: 'warning', message: 'El usuario debe tener al menos 3 caracteres' })
+    return
+  }
+
+  if (nuevaContrasena.value.length < 8) {
+    $q.notify({ type: 'warning', message: 'La contraseña debe tener al menos 8 caracteres' })
+    return
+  }
+
   if (nuevaContrasena.value !== confirmarContrasena.value) {
     $q.notify({ type: 'negative', message: 'Las contraseñas no coinciden' })
     return
@@ -130,17 +140,18 @@ const cambiarCredenciales = async () => {
     const data = await response.json()
 
     if (!response.ok) {
+      // Muestra el error exacto que envía el backend (ej: "Ese nombre ya está en uso")
       $q.notify({ type: 'negative', message: data.error || 'Error al cambiar credenciales' })
       return
     }
 
-    $q.notify({ type: 'positive', message: data.mensaje || 'Credenciales actualizadas con éxito' })
+    $q.notify({ type: 'positive', message: data.mensaje || 'Credenciales actualizadas con éxito. Por favor inicia sesión.' })
 
-    // Actualizamos el estado en el store y localstorage
-    authStore.marcarCredencialesActualizadas()
+    // Cerramos la sesión actual para obligar al usuario a loguearse con su nueva cuenta
+    authStore.cerrarSesion()
 
-    // Redirigimos al panel de administración
-    router.push('/admin')
+    // Redirigimos al login
+    router.push('/login')
 
   } catch (error) {
     console.error('Error de red:', error)
