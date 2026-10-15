@@ -10,12 +10,24 @@ export default defineRouter(({ store }) => {
   })
 
   // NAVIGATION GUARD GLOBAL
-  Router.beforeEach((to, _from, next) => {
+  Router.beforeEach(async (to, _from, next) => {
     const authStore = useAuthStore(store)
+
+    //si hay token pero todavía no se confirmo contra el backend en esta carga de la app espera esa confirmacion
+    //antes de evaluar cualquier otra regla.
+    if(authStore.token && !authStore.sincronizado) {
+      await authStore.sincronizarConBackend()
+      authStore.sincronizado = true
+    }
 
     // 1. Si la ruta requiere estar autenticado y el usuario NO tiene token
     if (to.meta.requiereAuth && !authStore.estaAutenticado) {
       return next({ path: '/login', replace: true })
+    }
+
+    //si la cuenta debe cambiar credenciales, forzar esa pantalla sin importar a donde intente ir
+    if (authStore.debeCambiarCredenciales && to.path !== '/cambiar-credenciales' ) {
+      return next({ path: '/cambiar-credenciales', replace: true })
     }
 
     // 2. Si el usuario YA está autenticado e intenta entrar a /login o /registro

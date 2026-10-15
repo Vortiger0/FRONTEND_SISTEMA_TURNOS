@@ -156,7 +156,7 @@ const iniciarSesion = async () => {
   }
 
   //guarda el token y el rol en el store (y en localStorage) para que el resto de la app sepa que hay una sesión activa y quién es
-  authStore.guardarSesion(data.token, data.rol, data.sucursal)
+  authStore.guardarSesion(data.token, data.rol, data.sucursal, data.debeCambiarCredenciales)
 
   $q.notify({type: 'positive', message: data.mensaje})
 

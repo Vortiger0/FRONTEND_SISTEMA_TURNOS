@@ -90,6 +90,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/cambiar-credenciales': RouteRecordInfo<
+      '/cambiar-credenciales',
+      '/cambiar-credenciales',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/funcionario': RouteRecordInfo<
       '/funcionario',
       '/funcionario',
@@ -216,6 +223,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/horarios.vue': {
       routes:
         | '/admin/horarios'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/cambiar-credenciales.vue': {
+      routes:
+        | '/cambiar-credenciales'
       views:
         | never
       pathParamNames:
