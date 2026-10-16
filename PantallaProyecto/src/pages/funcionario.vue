@@ -25,12 +25,12 @@ meta:
           </q-btn>
         </q-card-section>
 
-        <!-- CAJA / INFORMACIÓN DEL FUNCIONARIO -->
+        <!-- SUCURSAL ACTUAL -->
         <q-card-section class="q-pt-sm text-center">
-          <div class="text-caption text-grey-7">Estado de Atención</div>
+          <div class="text-caption text-grey-7">Sucursal Actual</div>
           <div class="text-h6 text-primary text-weight-bold row items-center justify-center q-gutter-x-xs">
-            <q-icon name="point_of_sale" size="22px" />
-            <span>Panel Activo</span>
+            <q-icon name="storefront" size="22px" />
+            <span>{{ sucursalNombre }}</span>
           </div>
         </q-card-section>
 
@@ -113,7 +113,7 @@ meta:
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
@@ -126,6 +126,14 @@ const mostrarConfirmacion = ref(false)
 const turnoActual = ref(null)
 const cargandoSiguiente = ref(false)
 const cargandoAusente = ref(false)
+
+// Propiedad computada para obtener el nombre de la sucursal desde el store
+const sucursalNombre = computed(() => {
+  if (typeof authStore.sucursal === 'object' && authStore.sucursal !== null) {
+    return authStore.sucursal.nombre || 'Sucursal Asignada'
+  }
+  return authStore.sucursal || 'Sin Sucursal Asignada'
+})
 
 // Llamar al siguiente turno (cierra el actual si lo había y asigna el próximo)
 const llamarSiguiente = async () => {
@@ -188,7 +196,7 @@ const marcarAusente = async () => {
 
     $q.notify({ type: 'warning', message: 'Turno marcado como ausente' })
     
-    // Actualiza con el resultado devuelto (puede ser un nuevo turno asignado o vacío)
+    // Actualiza con el resultado devuelto (nuevo turno o vacío)
     turnoActual.value = data.id ? data : null
 
   } catch (error) {
