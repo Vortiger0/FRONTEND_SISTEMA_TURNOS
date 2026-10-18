@@ -162,14 +162,14 @@ meta:
             <div class="text-subtitle1 text-weight-bolder text-grey-10 q-mb-sm">Feriados/días cerrados</div>
 
             <div class="row items-center q-gutter-x-sm q-mb-sm">
-              <q-input v-model="nuevaFechaExcepcion" type="date" dense outlined style="width: 180px;" :disable="guardando" />
-              <q-btn label="Agregar" color="primary" unelevated dense :disable="guardando" @click="agregarExcepcion" />
+              <q-input v-model="nuevaFechaExcepcion" type="date" dense outlined style="width: 180px;" :disable="guardando || agregandoExcepcion" />
+              <q-btn label="Agregar" color="primary" unelevated dense :loading="agregandoExcepcion" :disable="guardando || !nuevaFechaExcepcion" @click="agregarExcepcion" />
             </div>
 
             <!-- Lista de excepciones cargadas -->
-            <div v-for="fecha in excepciones" :key="fecha" class="row items-center justify-between bg-red-1 text-red-9 q-pa-sm q-mb-xs" style="border-radius: 20px;">
-              <span>{{ fecha }}</span>
-              <q-btn flat round dense icon="close" color="red-9" :disable="guardando" @click="quitarExcepcion(fecha)" />
+            <div v-for="ex in excepciones" :key="ex.id || ex.fecha" class="row items-center justify-between bg-red-1 text-red-9 q-pa-sm q-mb-xs" style="border-radius: 20px;">
+              <span>{{ ex.fecha }}</span>
+              <q-btn flat round dense icon="close" color="red-9" :disable="guardando" @click="quitarExcepcion(ex)" />
             </div>
           </q-card-section>
 
@@ -194,25 +194,26 @@ meta:
 
 <script setup>
 import { useSucursalStore } from '../../stores/sucursal-store'
+import { useAuthStore } from '../../stores/auth-store'
 import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const sucursalStore = useSucursalStore()
-
-const API_URL = 'http://localhost:3000/api/configuracion-horarios'
+const authStore = useAuthStore()
 
 const cargando = ref(false)
 const guardando = ref(false)
+const agregandoExcepcion = ref(false)
 
 const horarios = ref([
-  { dia: 'Lunes', atiende: true, desde: '09:00', hasta: '17:00' },
-  { dia: 'Martes', atiende: true, desde: '09:00', hasta: '17:00' },
-  { dia: 'Miércoles', atiende: true, desde: '09:00', hasta: '17:00' },
-  { dia: 'Jueves', atiende: true, desde: '09:00', hasta: '17:00' },
-  { dia: 'Viernes', atiende: true, desde: '09:00', hasta: '17:00' },
-  { dia: 'Sábado', atiende: true, desde: '09:00', hasta: '13:00' },
-  { dia: 'Domingo', atiende: false, desde: '09:00', hasta: '17:00' }
+  { dia: 'Lunes', diaSemana: 'LUNES', atiende: true, desde: '09:00', hasta: '17:00' },
+  { dia: 'Martes', diaSemana: 'MARTES', atiende: true, desde: '09:00', hasta: '17:00' },
+  { dia: 'Miércoles', diaSemana: 'MIERCOLES', atiende: true, desde: '09:00', hasta: '17:00' },
+  { dia: 'Jueves', diaSemana: 'JUEVES', atiende: true, desde: '09:00', hasta: '17:00' },
+  { dia: 'Viernes', diaSemana: 'VIERNES', atiende: true, desde: '09:00', hasta: '17:00' },
+  { dia: 'Sábado', diaSemana: 'SABADO', atiende: true, desde: '09:00', hasta: '13:00' },
+  { dia: 'Domingo', diaSemana: 'DOMINGO', atiende: false, desde: '09:00', hasta: '17:00' }
 ])
 
 const margenCorte = ref(15)
@@ -221,28 +222,50 @@ const umbralConcurrido = ref(20)
 const topeEmisionDiaria = ref(100)
 
 const nuevaFechaExcepcion = ref('')
-const excepciones = ref(['2026-08-25'])
+const excepciones = ref([])
+
+// Función auxiliar para extraer solo "HH:mm" de una fecha ISO o string de hora
+const extraerHora = (cadenaHora) => {
+  if (!cadenaHora) return '09:00'
+  if (cadenaHora.includes('T')) {
+    const timePart = cadenaHora.split('T')[1]
+    return timePart.substring(0, 5) // "09:00"
+  }
+  return cadenaHora.substring(0, 5)
+}
 
 // GET: Cargar configuración desde el backend
 const cargarConfiguracion = async () => {
   cargando.value = true
   try {
-    /*
-    const response = await fetch(API_URL, {
+    const response = await fetch('/api/admin/horarios', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
     })
+
     if (!response.ok) throw new Error('Error al obtener la configuración')
     const data = await response.json()
 
-    horarios.value = data.horarios
-    margenCorte.value = data.margenCorte
-    umbralPocoConcurrido.value = data.umbralPocoConcurrido
-    umbralConcurrido.value = data.umbralConcurrido
-    topeEmisionDiaria.value = data.topeEmisionDiaria
-    sucursalStore.cantidadCajas = data.cantidadCajas
+    if (data.horarios && Array.isArray(data.horarios)) {
+      horarios.value = data.horarios.map(h => ({
+        ...h,
+        dia: h.diaSemana.charAt(0) + h.diaSemana.slice(1).toLowerCase(), // Reconstruye etiqueta visual si es necesario
+        desde: extraerHora(h.horaDesde || h.desde),
+        hasta: extraerHora(h.horaHasta || h.hasta)
+      }))
+    }
+
+    if (data.margenCorte !== undefined) margenCorte.value = data.margenCorte
+    if (data.umbralPocoOcupado !== undefined) umbralPocoConcurrido.value = data.umbralPocoOcupado
+    if (data.umbralOcupado !== undefined) umbralConcurrido.value = data.umbralOcupado
+    if (data.maxTurnosDia !== undefined) topeEmisionDiaria.value = data.maxTurnosDia
+    if (data.cantidadCajas !== undefined) sucursalStore.cantidadCajas = data.cantidadCajas
+    
     excepciones.value = data.excepciones || []
-    */
+
   } catch (error) {
     console.error('Error al cargar datos:', error)
     $q.notify({
@@ -254,7 +277,7 @@ const cargarConfiguracion = async () => {
   }
 }
 
-// PUT / POST: Guardar configuración en el backend
+// PUT: Guardar configuración general
 const guardarConfiguracion = async () => {
   if (umbralConcurrido.value <= umbralPocoConcurrido.value) {
     $q.notify({
@@ -266,27 +289,33 @@ const guardarConfiguracion = async () => {
 
   guardando.value = true
   try {
+    const horariosFormateados = horarios.value.map(h => ({
+      diaSemana: h.diaSemana,
+      atiende: h.atiende,
+      horaDesde: h.desde,
+      horaHasta: h.hasta
+    }))
+
     const payload = {
-      horarios: horarios.value,
+      horarios: horariosFormateados,
       margenCorte: margenCorte.value,
-      umbralPocoConcurrido: umbralPocoConcurrido.value,
-      umbralConcurrido: umbralConcurrido.value,
-      topeEmisionDiaria: topeEmisionDiaria.value,
-      cantidadCajas: sucursalStore.cantidadCajas,
-      excepciones: excepciones.value
+      umbralPocoOcupado: umbralPocoConcurrido.value,
+      umbralOcupado: umbralConcurrido.value,
+      maxTurnosDia: topeEmisionDiaria.value,
+      cantidadCajas: sucursalStore.cantidadCajas
     }
 
-    console.log('Enviando datos al servidor:', payload)
-
-    /*
-    const response = await fetch(API_URL, {
+    const response = await fetch('/api/admin/horarios', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
       body: JSON.stringify(payload)
     })
 
-    if (!response.ok) throw new Error('Error al guardar la configuración')
-    */
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Error al guardar la configuración')
 
     $q.notify({
       type: 'positive',
@@ -296,24 +325,83 @@ const guardarConfiguracion = async () => {
     console.error('Error al guardar datos:', error)
     $q.notify({
       type: 'negative',
-      message: 'Error al intentar guardar los cambios'
+      message: error.message || 'Error al intentar guardar los cambios'
     })
   } finally {
     guardando.value = false
   }
 }
 
-const agregarExcepcion = () => {
-  if (nuevaFechaExcepcion.value) {
-    if (!excepciones.value.includes(nuevaFechaExcepcion.value)) {
-      excepciones.value.push(nuevaFechaExcepcion.value)
-      nuevaFechaExcepcion.value = ''
-    }
+// POST: Agregar excepción de inmediato
+const agregarExcepcion = async () => {
+  if (!nuevaFechaExcepcion.value) return
+
+  agregandoExcepcion.value = true
+  try {
+    const response = await fetch('/api/admin/excepciones', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({ fecha: nuevaFechaExcepcion.value })
+    })
+
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Error al agregar la excepción')
+
+    excepciones.value.push(data)
+    nuevaFechaExcepcion.value = ''
+
+    $q.notify({
+      type: 'positive',
+      message: 'Feriado agregado correctamente'
+    })
+  } catch (error) {
+    console.error('Error al agregar excepción:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'No se pudo agregar el feriado'
+    })
+  } finally {
+    agregandoExcepcion.value = false
   }
 }
 
-const quitarExcepcion = (fecha) => {
-  excepciones.value = excepciones.value.filter(f => f !== fecha)
+// DELETE: Eliminar excepción de inmediato por ID
+const quitarExcepcion = async (ex) => {
+  const idExcepcion = ex.id
+  if (!idExcepcion) {
+    excepciones.value = excepciones.value.filter(item => item !== ex)
+    return
+  }
+
+  try {
+    const response = await fetch(`/api/admin/excepciones/${idExcepcion}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.error || 'Error al eliminar la excepción')
+    }
+
+    excepciones.value = excepciones.value.filter(item => item.id !== idExcepcion)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Feriado eliminado'
+    })
+  } catch (error) {
+    console.error('Error al eliminar excepción:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'No se pudo eliminar el feriado'
+    })
+  }
 }
 
 const bloquearSimbolos = (event) => {
