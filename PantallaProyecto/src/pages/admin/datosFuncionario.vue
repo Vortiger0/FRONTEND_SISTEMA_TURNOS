@@ -46,7 +46,7 @@ meta:
         <q-list v-else separator class="q-py-xs">
           <q-item
             v-for="funcionario in funcionarios"
-            :key="funcionario.id || funcionario.usuario"
+            :key="funcionario.id || funcionario.nombreUsuario"
             class="q-py-md q-px-lg"
           >
             <q-item-section avatar>
@@ -55,7 +55,7 @@ meta:
 
             <q-item-section>
               <q-item-label class="text-subtitle1 text-weight-bolder text-grey-10">
-                {{ funcionario.nombre }}
+                {{ funcionario.nombreCompleto }}
               </q-item-label>
               
               <q-item-label class="text-body2 text-weight-bold text-grey-8 flex items-center gap-1 q-mt-xs">
@@ -68,9 +68,9 @@ meta:
                   class="text-weight-bolder q-px-sm"
                   size="13px"
                 >
-                  Caja {{ funcionario.caja }}
+                  Caja {{ funcionario.numeroCaja }}
                 </q-chip>
-                <span class="text-grey-7 q-ml-xs text-weight-bold">{{ funcionario.usuario }}</span>
+                <span class="text-grey-7 q-ml-xs text-weight-bold">{{ funcionario.nombreUsuario }}</span>
               </q-item-label>
             </q-item-section>
 
@@ -109,7 +109,7 @@ meta:
       </q-card>
     </div>
 
-    <!-- Ventana de diálogo -->
+    <!-- Ventana de diálogo de creación/edición -->
     <q-dialog v-model="mostrarDialogo" persistent>
       <q-card style="width: 100%; max-width: 440px;" class="radius-16 q-pa-sm">
 
@@ -156,7 +156,7 @@ meta:
 
           <q-input
             v-model="nuevaContra"
-            label="Contraseña"
+            :label="funcionarioEditando ? 'Contraseña (dejar en blanco para no cambiar)' : 'Contraseña'"
             :type="verContra ? 'text' : 'password'"
             outlined
             dense
@@ -232,15 +232,15 @@ meta:
 
 <script setup>
 import { useSucursalStore } from '../../stores/sucursal-store'
+import { useAuthStore } from '../../stores/auth-store'
 import { ref, computed, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
 
+const $q = useQuasar()
 const sucursalStore = useSucursalStore()
+const authStore = useAuthStore()
 
-const funcionarios = ref([
-  { id: 1, nombre: 'Lucía Fernández', usuario: '@lucia.fernandez', caja: 1, contra: '1234' },
-  { id: 2, nombre: 'Martín Souza', usuario: '@martin.souza', caja: 2, contra: '1234' }
-])
-
+const funcionarios = ref([])
 const mostrarDialogo = ref(false)
 const verContra = ref(false)
 const cargando = ref(false)
@@ -253,8 +253,6 @@ const nuevaContra = ref('')
 
 const funcionarioEditando = ref(null)
 
-const API_URL = 'http://localhost:3000/api/funcionarios'
-
 // Cajas disponibles filtradas dinámicamente
 const opcionesCajas = computed(() => {
   const totalCajas = sucursalStore.cantidadCajas || 4
@@ -263,9 +261,9 @@ const opcionesCajas = computed(() => {
   // Obtener las cajas ocupadas por otros funcionarios
   const cajasOcupadas = funcionarios.value
     .filter(f => !funcionarioEditando.value || f.id !== funcionarioEditando.value.id)
-    .map(f => Number(f.caja))
+    .map(f => Number(f.numeroCaja))
 
-  // Retornar solo las cajas que no están en uso (o la del funcionario actual si edita)
+  // Retornar solo las cajas que no estén en uso (o la del funcionario actual si edita)
   return todasLasCajas.filter(caja => !cajasOcupadas.includes(caja))
 })
 
@@ -273,17 +271,22 @@ const opcionesCajas = computed(() => {
 const obtenerFuncionarios = async () => {
   cargando.value = true
   try {
-    /*
-    const response = await fetch(API_URL, {
+    const response = await fetch('/api/admin/funcionarios', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
     })
     if (!response.ok) throw new Error('Error al obtener la lista de funcionarios')
     const data = await response.json()
     funcionarios.value = data
-    */
   } catch (error) {
     console.error('Error al consultar funcionarios:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'No se pudo cargar la lista de funcionarios'
+    })
   } finally {
     cargando.value = false
   }
@@ -296,47 +299,65 @@ const guardarFuncionario = async () => {
   guardando.value = true
   try {
     const payload = {
-      nombre: nuevoNombre.value,
-      usuario: nuevoUsuario.value,
-      caja: nuevaCaja.value,
-      contra: nuevaContra.value
+      nombreCompleto: nuevoNombre.value,
+      nombreUsuario: nuevoUsuario.value,
+      numeroCaja: Number(nuevaCaja.value)
+    }
+
+    // Si es nuevo, mandamos la contraseña. Si es edición, solo se incluye si escribieron algo.
+    if (!funcionarioEditando.value) {
+      payload.contrasena = nuevaContra.value
+    } else if (nuevaContra.value.trim() !== '') {
+      payload.contrasena = nuevaContra.value
     }
 
     if (funcionarioEditando.value) {
       // PUT: Actualizar existente
-      console.log('Actualizando funcionario:', funcionarioEditando.value.id, payload)
-      /*
-      const response = await fetch(`${API_URL}/${funcionarioEditando.value.id}`, {
+      const response = await fetch(`/api/admin/funcionarios/${funcionarioEditando.value.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`
+        },
         body: JSON.stringify(payload)
       })
-      if (!response.ok) throw new Error('Error al actualizar')
-      */
-      funcionarioEditando.value.nombre = nuevoNombre.value
-      funcionarioEditando.value.usuario = nuevoUsuario.value
-      funcionarioEditando.value.caja = nuevaCaja.value
-      funcionarioEditando.value.contra = nuevaContra.value
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Error al actualizar')
+
+      $q.notify({
+        type: 'positive',
+        message: 'Funcionario actualizado correctamente'
+      })
     } else {
       // POST: Crear nuevo
-      console.log('Creando nuevo funcionario:', payload)
-      /*
-      const response = await fetch(API_URL, {
+      const response = await fetch('/api/admin/funcionarios', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`
+        },
         body: JSON.stringify(payload)
       })
-      if (!response.ok) throw new Error('Error al crear')
-      const creado = await response.json()
-      funcionarios.value.push(creado)
-      */
-      funcionarios.value.push({ ...payload, id: Date.now() })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Error al crear')
+
+      $q.notify({
+        type: 'positive',
+        message: 'Funcionario creado correctamente'
+      })
     }
 
+    await obtenerFuncionarios()
     limpiarFormulario()
     mostrarDialogo.value = false
   } catch (error) {
     console.error('Error al guardar funcionario:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'Error al intentar guardar el funcionario'
+    })
   } finally {
     guardando.value = false
   }
@@ -344,24 +365,49 @@ const guardarFuncionario = async () => {
 
 // DELETE: Eliminar funcionario
 const eliminarFuncionario = async (funcionario) => {
+  const confirmado = window.confirm(`¿Estás seguro de eliminar a ${funcionario.nombreCompleto}?`)
+  
+  if (!confirmado) return
+
   try {
-    console.log('Eliminando funcionario:', funcionario.id || funcionario.usuario)
-    /*
-    const response = await fetch(`${API_URL}/${funcionario.id}`, {
-      method: 'DELETE'
+    if (!funcionario.id) {
+      throw new Error('ID de funcionario no válido')
+    }
+
+    const response = await fetch(`/api/admin/funcionarios/${funcionario.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
     })
-    if (!response.ok) throw new Error('Error al eliminar')
-    */
-    funcionarios.value = funcionarios.value.filter(f => f !== funcionario)
+
+    const contentType = response.headers.get('content-type')
+    let data = {}
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json()
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al eliminar el funcionario')
+    }
+
+    funcionarios.value = funcionarios.value.filter(f => f.id !== funcionario.id)
+    $q.notify({
+      type: 'positive',
+      message: 'Funcionario eliminado correctamente'
+    })
   } catch (error) {
     console.error('Error al eliminar funcionario:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'No se pudo eliminar el funcionario'
+    })
   }
 }
 
 const abrirNuevo = () => {
   limpiarFormulario()
   
-  // Asignar automáticamente la primera caja disponible si existe
   if (opcionesCajas.value.length > 0) {
     nuevaCaja.value = opcionesCajas.value[0]
   }
@@ -371,10 +417,10 @@ const abrirNuevo = () => {
 
 const abrirEdicion = (funcionario) => {
   funcionarioEditando.value = funcionario
-  nuevoNombre.value = funcionario.nombre
-  nuevoUsuario.value = funcionario.usuario
-  nuevaContra.value = funcionario.contra || ''
-  nuevaCaja.value = funcionario.caja
+  nuevoNombre.value = funcionario.nombreCompleto
+  nuevoUsuario.value = funcionario.nombreUsuario
+  nuevaContra.value = ''
+  nuevaCaja.value = funcionario.numeroCaja
   mostrarDialogo.value = true
 }
 
