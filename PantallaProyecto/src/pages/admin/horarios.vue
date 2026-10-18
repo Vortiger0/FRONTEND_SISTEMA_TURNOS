@@ -168,7 +168,7 @@ meta:
 
             <!-- Lista de excepciones cargadas -->
             <div v-for="ex in excepciones" :key="ex.id || ex.fecha" class="row items-center justify-between bg-red-1 text-red-9 q-pa-sm q-mb-xs" style="border-radius: 20px;">
-              <span>{{ ex.fecha }}</span>
+              <span>{{ formatearFecha(ex.fecha) }}</span>
               <q-btn flat round dense icon="close" color="red-9" :disable="guardando" @click="quitarExcepcion(ex)" />
             </div>
           </q-card-section>
@@ -232,6 +232,14 @@ const extraerHora = (cadenaHora) => {
     return timePart.substring(0, 5) // "09:00"
   }
   return cadenaHora.substring(0, 5)
+}
+
+//función para mostrar una fecha en formato legible (dd/mm/aaaa)
+const formatearFecha = (fechaIso) => {
+  if (!fechaIso) return ''
+  const fecha = new Date(fechaIso)
+  return fecha.toLocaleDateString('es-UY', {timeZone: 'UTC' })
+
 }
 
 // GET: Cargar configuración desde el backend
