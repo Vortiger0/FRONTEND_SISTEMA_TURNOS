@@ -87,8 +87,13 @@ meta:
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from '@/stores/auth-store'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+
+const $q = useQuasar()
+const authStore = useAuthStore()
 
 const direccion = ref('')
 const telefono = ref('')
@@ -101,43 +106,52 @@ const guardando = ref(false)
 let mapa = null
 let marcador = null
 
-// URL base para los endpoints
-const API_URL = 'http://localhost:3000/api/local' 
+// URL base para el endpoint del local
+const API_URL = '/api/admin/local'
 
 // GET: Obtener datos actuales del local
 const obtenerDatosLocal = async () => {
   cargando.value = true
   try {
-    /* 
     const response = await fetch(API_URL, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${authStore.token}`
       }
     })
 
     if (!response.ok) throw new Error('Error al obtener datos del local')
 
     const data = await response.json()
-    direccion.value = data.direccion
-    telefono.value = data.telefono
-    latitud.value = data.latitud
-    longitud.value = data.longitud
+    
+    // Asignamos los valores devueltos por el backend
+    direccion.value = data.direccion || ''
+    telefono.value = data.telefono || ''
+    
+    if (data.latitud !== null && data.longitud !== null) {
+      latitud.value = data.latitud
+      longitud.value = data.longitud
+    }
 
     if (marcador && mapa) {
-      marcador.setLatLng([data.latitud, data.longitud])
-      mapa.setView([data.latitud, data.longitud], 15)
+      marcador.setLatLng([latitud.value, longitud.value])
+      mapa.setView([latitud.value, longitud.value], 15)
+      // Asegura que el mapa recalcule su tamaño correctamente al cargar los datos
+      setTimeout(() => {
+        mapa.invalidateSize()
+      }, 200)
     }
-    */
+
   } catch (error) {
     console.error('Error al consultar backend:', error)
+    $q.notify({ type: 'negative', message: 'No se pudieron cargar los datos del local' })
   } finally {
     cargando.value = false
   }
 }
 
-// PUT / POST: Guardar cambios del local
+// PUT: Guardar cambios del local
 const guardarDatos = async () => {
   guardando.value = true
   try {
@@ -148,25 +162,26 @@ const guardarDatos = async () => {
       longitud: longitud.value
     }
 
-    console.log('Enviando datos al backend:', payload)
-
-    /* 
     const response = await fetch(API_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${authStore.token}`
       },
       body: JSON.stringify(payload)
     })
 
-    if (!response.ok) throw new Error('Error al guardar los cambios')
-
     const resData = await response.json()
-    console.log('Respuesta backend:', resData)
-    */
+
+    if (!response.ok) {
+      throw new Error(resData.error || 'Error al guardar los cambios')
+    }
+
+    $q.notify({ type: 'positive', message: resData.mensaje || 'Datos del local actualizados correctamente' })
+
   } catch (error) {
     console.error('Error al guardar en el backend:', error)
+    $q.notify({ type: 'negative', message: error.message || 'Error al conectar con el servidor' })
   } finally {
     guardando.value = false
   }
