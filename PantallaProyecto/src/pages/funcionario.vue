@@ -21,12 +21,30 @@ meta:
           </q-btn>
         </q-card-section>
 
-        <!-- SUCURSAL ACTUAL -->
-        <q-card-section class="q-pt-sm text-center">
-          <div class="text-caption text-grey-7">Sucursal Actual</div>
-          <div class="text-h6 text-primary text-weight-bold row items-center justify-center q-gutter-x-xs">
-            <q-icon name="storefront" size="22px" />
-            <span>{{ sucursalNombre }}</span>
+        <!-- SUCURSAL (IZQUIERDA) Y CAJA ASIGNADA (DERECHA) -->
+        <q-card-section class="q-pt-md q-pb-sm">
+          <div class="row items-center justify-between">
+            
+            <!-- Sucursal Actual (Izquierda) -->
+            <div class="col text-left">
+              <div class="text-caption text-grey-7">Sucursal Actual</div>
+              <div class="text-subtitle1 text-primary text-weight-bold row items-center q-gutter-x-xs">
+                <q-icon name="storefront" size="20px" />
+                <span class="ellipsis">{{ sucursalNombre }}</span>
+              </div>
+            </div>
+
+            <q-separator vertical class="q-mx-md" style="height: 35px;" />
+
+            <!-- Caja Asignada leída desde el store de autenticación (Derecha) -->
+            <div class="col-auto text-right">
+              <div class="text-caption text-grey-7">Caja Asignada</div>
+              <div class="text-subtitle1 text-grey-10 text-weight-bolder row items-center justify-end q-gutter-x-xs">
+                <q-icon name="point_of_sale" size="20px" color="primary" />
+                <span>Caja {{ cajaFuncionario }}</span>
+              </div>
+            </div>
+
           </div>
         </q-card-section>
 
@@ -109,7 +127,7 @@ meta:
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
@@ -123,15 +141,27 @@ const turnoActual = ref(null)
 const cargandoSiguiente = ref(false)
 const cargandoAusente = ref(false)
 
-// Propiedad computada para obtener el nombre de la sucursal desde el store
+// Sucursal actual desde el store
 const sucursalNombre = computed(() => {
   if (typeof authStore.sucursal === 'object' && authStore.sucursal !== null) {
     return authStore.sucursal.nombre || 'Sucursal Asignada'
   }
-  return authStore.sucursal || 'Sin Sucursal Asignada'
+  return authStore.sucursal || 'Sin Sucursal'
 })
 
-// Llamar al siguiente turno (cierra el actual si lo había y asigna el próximo)
+// Número de caja extraído directamente desde la raíz del authStore
+const cajaFuncionario = computed(() => {
+  return authStore.numeroCaja ?? '-'
+})
+
+// Sincronizar con el backend al cargar la vista si falta información en el store
+onMounted(async () => {
+  if (authStore.token && !authStore.numeroCaja) {
+    await authStore.sincronizarConBackend()
+  }
+})
+
+// Llamar al siguiente turno
 const llamarSiguiente = async () => {
   cargandoSiguiente.value = true
   try {
@@ -150,14 +180,12 @@ const llamarSiguiente = async () => {
       return
     }
 
-    // Contemplar el caso cuando la fila está vacía
     if (data.mensaje && !data.id) {
       turnoActual.value = null
       $q.notify({ type: 'info', message: data.mensaje })
       return
     }
 
-    // Actualiza con el turno recibido completo
     turnoActual.value = data
     $q.notify({ type: 'positive', message: `Atendiendo turno N° ${data.numero}` })
 
@@ -191,8 +219,6 @@ const marcarAusente = async () => {
     }
 
     $q.notify({ type: 'warning', message: 'Turno marcado como ausente' })
-    
-    // Actualiza con el resultado devuelto (nuevo turno o vacío)
     turnoActual.value = data.id ? data : null
 
   } catch (error) {
@@ -211,10 +237,6 @@ const cerrarSesion = () => {
 </script>
 
 <style scoped>
-.border-danger {
-  border: 1px solid #ef9a9a !important;
-}
-
 .fondo {
   background: linear-gradient(to bottom, #3d8ae2, #1c4779);
 }
