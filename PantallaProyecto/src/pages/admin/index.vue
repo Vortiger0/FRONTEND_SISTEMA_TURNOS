@@ -14,7 +14,7 @@ meta:
     </div>
 
     <!-- row + q-col-gutter-md: acomoda las 3 tarjetas en fila -->
-    <div v-else class="row q-col-gutter-md">
+    <div v-else class="row q-col-gutter-md justify-center">
 
       <!-- Cada tarjeta ocupa una columna (col-12 en móviles, col-4 en escritorio) -->
       <div class="col-12 col-md-4">
@@ -44,6 +44,24 @@ meta:
         </q-card>
       </div>
 
+      <div class="col-12 col-md-4">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
+          <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Atendidos hoy</div>
+          <div class="text-h2 text-weight-bold text-primary">
+            {{atendidos}}
+          </div>
+        </q-card>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
+          <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Ausentes hoy</div>
+          <div class="text-h2 text-weight-bold text-primary">
+            {{ausentes}}
+          </div>
+        </q-card>
+      </div>
+
     </div>
   </q-page>
 </template>
@@ -54,6 +72,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 const turnosHoy = ref(0)
 const numeroActual = ref(null)
 const estadoLocal = ref('Cerrado')
+const atendidos = ref(0)
+const ausentes = ref(0)
 
 const cargando = ref(true)
 let timerPolling = null
@@ -84,6 +104,8 @@ const obtenerMetricas = async (esCargaInicial = false) => {
     */
 
     // Simulación de respuesta mientras se conecta la API
+    atendidos.value = 28
+    ausentes.value = 10
     turnosHoy.value = 38
     numeroActual.value = 45
     estadoLocal.value = 'Abierto'
