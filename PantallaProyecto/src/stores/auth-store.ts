@@ -19,8 +19,8 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // Recibe el numeroCaja como parámetro tipado junto con los demás datos de sesión
-    guardarSesion(token: string, rol: string, sucursal: string | null, debeCambiarCredenciales: boolean, numeroCaja: number | null) {
+ // Recibe el numeroCaja como parámetro tipado junto con los demás datos de sesión
+    async guardarSesion(token: string, rol: string, sucursal: string | null, debeCambiarCredenciales: boolean, numeroCaja: number | null) {
       this.token = token
       this.rol = rol
       this.sucursal = sucursal
