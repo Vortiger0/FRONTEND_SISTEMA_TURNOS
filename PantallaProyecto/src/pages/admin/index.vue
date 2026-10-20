@@ -10,10 +10,10 @@ meta:
 
     <!-- Indicador de carga inicial -->
     <div v-if="cargando" class="flex flex-center q-pa-xl">
-      <q-spinner color="primary" size="50px" />
+      <q-spinner color="white" size="50px" />
     </div>
 
-    <!-- row + q-col-gutter-md: acomoda las 3 tarjetas en fila -->
+    <!-- row + q-col-gutter-md: acomoda las tarjetas en fila -->
     <div v-else class="row q-col-gutter-md justify-center">
 
       <!-- Cada tarjeta ocupa una columna (col-12 en móviles, col-4 en escritorio) -->
@@ -48,7 +48,7 @@ meta:
         <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Atendidos hoy</div>
           <div class="text-h2 text-weight-bold text-primary">
-            {{atendidos}}
+            {{ atendidos }}
           </div>
         </q-card>
       </div>
@@ -57,7 +57,7 @@ meta:
         <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Ausentes hoy</div>
           <div class="text-h2 text-weight-bold text-primary">
-            {{ausentes}}
+            {{ ausentes }}
           </div>
         </q-card>
       </div>
@@ -68,6 +68,11 @@ meta:
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from '../../stores/auth-store'
+
+const $q = useQuasar()
+const authStore = useAuthStore()
 
 const turnosHoy = ref(0)
 const numeroActual = ref(null)
@@ -78,39 +83,40 @@ const ausentes = ref(0)
 const cargando = ref(true)
 let timerPolling = null
 
-const API_URL = 'http://localhost:3000/api/dashboard/resumen'
-
-// El color del texto cambia según el estado
+// El color del texto cambia según el estado ('Abierto' o 'Cerrado')
 const colorEstado = computed(() => {
   return estadoLocal.value === 'Abierto' ? 'text-positive' : 'text-negative'
 })
 
-// GET: Obtener métricas del dashboard en tiempo real
+// GET: Obtener métricas del dashboard en tiempo real desde el backend
 const obtenerMetricas = async (esCargaInicial = false) => {
   if (esCargaInicial) cargando.value = true
   
   try {
-    /*
-    const response = await fetch(API_URL, {
+    const response = await fetch('/api/admin/inicio', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
     })
+
     if (!response.ok) throw new Error('Error al consultar el resumen del dashboard')
+    
     const data = await response.json()
 
+    // Mapeo exacto con los datos que devuelve tu función obtenerResumenInicio
     turnosHoy.value = data.turnosHoy
     numeroActual.value = data.numeroActual
     estadoLocal.value = data.estadoLocal
-    */
+    atendidos.value = data.atendidosHoy
+    ausentes.value = data.ausentesHoy
 
-    // Simulación de respuesta mientras se conecta la API
-    atendidos.value = 28
-    ausentes.value = 10
-    turnosHoy.value = 38
-    numeroActual.value = 45
-    estadoLocal.value = 'Abierto'
   } catch (error) {
     console.error('Error al obtener métricas del dashboard:', error)
+    if (esCargaInicial) {
+      $q.notify({ color: 'negative', message: 'No se pudieron cargar las métricas' })
+    }
   } finally {
     if (esCargaInicial) cargando.value = false
   }
@@ -120,14 +126,14 @@ onMounted(() => {
   // Carga inicial
   obtenerMetricas(true)
 
-  // Polling: Actualiza los datos cada 10 segundos
+  // Polling: Actualiza los datos automáticamente cada 10 segundos
   timerPolling = setInterval(() => {
     obtenerMetricas(false)
   }, 10000)
 })
 
 onUnmounted(() => {
-  // Limpia el intervalo al salir de la vista
+  // Limpia el intervalo al salir de la vista para evitar fugas de memoria
   if (timerPolling) clearInterval(timerPolling)
 })
 </script>
