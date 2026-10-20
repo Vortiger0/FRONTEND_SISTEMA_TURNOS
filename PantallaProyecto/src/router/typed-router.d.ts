@@ -118,11 +118,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/pantalla-tv': RouteRecordInfo<
-      '/pantalla-tv',
-      '/pantalla-tv',
-      Record<never, never>,
-      Record<never, never>,
+    '/pantalla-tv/[sucursalId]': RouteRecordInfo<
+      '/pantalla-tv/[sucursalId]',
+      '/pantalla-tv/:sucursalId',
+      { sucursalId: ParamValue<true> },
+      { sucursalId: ParamValue<false> },
       | never
     >,
     '/registro': RouteRecordInfo<
@@ -260,13 +260,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/pantalla-tv.vue': {
+    'src/pages/pantalla-tv/[sucursalId].vue': {
       routes:
-        | '/pantalla-tv'
+        | '/pantalla-tv/[sucursalId]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'sucursalId'
     }
     'src/pages/registro.vue': {
       routes:

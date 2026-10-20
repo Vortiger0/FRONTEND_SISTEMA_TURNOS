@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: false
+  requiereAuth: false
 </route>
 
 <template>
@@ -16,7 +17,7 @@ meta:
               Visualizador de Turnos
             </div>
             <div class="text-caption text-grey-7 text-weight-bold letter-spacing-sm">
-              SISTEMA DE ATENCIÓN PRESENCIAL
+              SUCURSAL {{ sucursalId }} — SISTEMA DE ATENCIÓN
             </div>
           </div>
         </div>
@@ -31,48 +32,54 @@ meta:
 
       <!-- SECCIÓN DE CAJAS -->
       <q-card-section class="q-py-xl q-px-xl bg-grey-2 main-content flex flex-center">
-        <div class="row q-col-gutter-xl justify-center items-center full-width grid-cajas">
+        <!-- Indicador de carga inicial -->
+        <div v-if="cargando" class="flex flex-center q-pa-xl">
+          <q-spinner color="primary" size="60px" />
+        </div>
+
+        <!-- Grilla de Cajas conectada al Backend -->
+        <div v-else class="row q-col-gutter-xl justify-center items-center full-width grid-cajas">
           <div
             v-for="caja in cajasActivas"
-            :key="caja.id"
+            :key="caja.numeroCaja"
             :class="colClass"
           >
-            <!-- TARJETAS DE CAJAS (DISEÑO MODERNO CON BORDE LATERAL) -->
-            <q-card class="shadow-4 radius-16 text-center q-pa-lg bg-white card-caja">
+            <!-- TARJETAS DE CAJAS -->
+            <q-card 
+              class="shadow-4 radius-16 text-center q-pa-lg bg-white card-caja"
+              :style="{ borderTopColor: caja.estado === 'ATENDIENDO' ? '#21ba45' : '#adb5bd' }"
+            >
               <div class="text-h4 text-weight-bolder text-grey-9 q-mb-xs caja-nombre">
-                {{ caja.nombre }}
+                Caja {{ caja.numeroCaja }}
               </div>
 
-              <!-- BADGE COMPLETAMENTE REDONDEADADO -->
+              <!-- BADGE DINÁMICO SEGÚN ESTADO -->
               <div class="row justify-center q-mb-md">
-                <q-badge color="primary" class="q-px-lg q-py-xs text-caption text-weight-bold badge-redondeado label-atendiendo">
-                  ATENDIENDO AHORA
+                <q-badge 
+                  :color="caja.estado === 'ATENDIENDO' ? 'primary' : 'grey-6'" 
+                  class="q-px-lg q-py-xs text-caption text-weight-bold badge-redondeado label-atendiendo"
+                >
+                  {{ caja.estado === 'ATENDIENDO' ? 'ATENDIENDO AHORA' : 'DISPONIBLE' }}
                 </q-badge>
               </div>
 
-              <div class="text-weight-bolder text-positive numero-caja">
-                #{{ caja.numero }}
+              <div class="text-weight-bolder numero-caja" :class="caja.estado === 'ATENDIENDO' ? 'text-positive' : 'text-grey-5'">
+                {{ caja.numeroTurno ? `#${caja.numeroTurno}` : '--' }}
               </div>
             </q-card>
+          </div>
+
+          <!-- Mensaje si no hay cajas -->
+          <div v-if="cajasActivas.length === 0" class="text-h6 text-grey-7">
+            No hay cajas registradas para esta sucursal.
           </div>
         </div>
       </q-card-section>
 
-      <!-- PRÓXIMOS NÚMEROS -->
+      <!-- SECCIÓN INFERIOR (Opcional para próximos o avisos) -->
       <q-card-section class="bg-white text-center q-py-lg bordered-top footer-section">
-        <div class="text-subtitle1 text-weight-bolder text-grey-8 text-uppercase q-mb-sm letter-spacing-sm">
-          Próximos Turnos
-        </div>
-        <div class="row justify-center items-center q-gutter-md proximos-container">
-          <q-badge
-            v-for="(num, index) in proximosNumeros"
-            :key="index"
-            outline
-            color="primary"
-            class="text-h4 text-weight-bolder q-px-lg q-py-sm radius-12 proximos-badge font-mono"
-          >
-            #{{ num }}
-          </q-badge>
+        <div class="text-subtitle1 text-weight-bolder text-grey-8 text-uppercase letter-spacing-sm">
+          Manténgase atento a su llamado en pantalla y altoparlante
         </div>
       </q-card-section>
 
@@ -82,10 +89,21 @@ meta:
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+// Obtiene el sucursalId de la ruta (ej: /tv/1). Si no viene, por defecto toma '1'
+const sucursalId = ref(route.params.sucursalId || '1')
 
 const horaActual = ref('')
-let timerHora = null
+const cajasActivas = ref([])
+const cargando = ref(true)
 
+let timerHora = null
+let timerPolling = null
+
+// Reloj en tiempo real
 const actualizarHora = () => {
   const ahora = new Date()
   const horas = String(ahora.getHours()).padStart(2, '0')
@@ -93,13 +111,30 @@ const actualizarHora = () => {
   horaActual.value = `${horas}:${minutos}`
 }
 
-const cajasActivas = ref([
-  { id: 1, nombre: 'Caja 1', numero: 25 },
-  { id: 2, nombre: 'Caja 2', numero: 26 }
-])
+// Petición al backend /api/tv/:sucursalId
+const obtenerEstadoTV = async (esCargaInicial = false) => {
+  if (esCargaInicial) cargando.value = true
 
-const proximosNumeros = ref([27, 28, 29, 30, 31])
+  try {
+    const response = await fetch(`/api/tv/${sucursalId.value}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    })
 
+    if (!response.ok) throw new Error('Error al obtener estado de la TV')
+
+    const data = await response.json()
+    // El backend devuelve { cajas: [...] }
+    cajasActivas.value = data.cajas || []
+
+  } catch (error) {
+    console.error('Error al sincronizar monitor TV:', error)
+  } finally {
+    if (esCargaInicial) cargando.value = false
+  }
+}
+
+// Distribución automática de columnas según la cantidad de cajas
 const colClass = computed(() => {
   const total = cajasActivas.value.length
   if (total <= 2) return 'col-12 col-sm-6'
@@ -110,10 +145,19 @@ const colClass = computed(() => {
 onMounted(() => {
   actualizarHora()
   timerHora = setInterval(actualizarHora, 1000)
+
+  // Carga inicial de datos de la TV
+  obtenerEstadoTV(true)
+
+  // Polling automático cada 4 segundos para refrescar turnos y estados en tiempo real
+  timerPolling = setInterval(() => {
+    obtenerEstadoTV(false)
+  }, 4000)
 })
 
 onUnmounted(() => {
   if (timerHora) clearInterval(timerHora)
+  if (timerPolling) clearInterval(timerPolling)
 })
 </script>
 
@@ -224,11 +268,6 @@ onUnmounted(() => {
 
   .footer-section {
     padding: 0.75rem !important;
-  }
-
-  .proximos-badge {
-    font-size: 1.3rem !important;
-    padding: 4px 10px !important;
   }
 }
 </style>
