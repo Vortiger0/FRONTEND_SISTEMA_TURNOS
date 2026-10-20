@@ -19,13 +19,12 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
- // Recibe el numeroCaja como parámetro tipado junto con los demás datos de sesión
-    async guardarSesion(token: string, rol: string, sucursal: string | null, debeCambiarCredenciales: boolean, numeroCaja: number | null) {
+    // Recibe el numeroCaja de forma segura y blindada contra valores undefined
+    async guardarSesion(token: string, rol: string, sucursal: string | null, debeCambiarCredenciales: boolean, numeroCaja: any) {
       this.token = token
       this.rol = rol
       this.sucursal = sucursal
       this.debeCambiarCredenciales = debeCambiarCredenciales
-      this.numeroCaja = numeroCaja
 
       localStorage.setItem('token', token)
       localStorage.setItem('rol', rol)
@@ -37,9 +36,12 @@ export const useAuthStore = defineStore('auth', {
         localStorage.removeItem('sucursal')
       }
 
-      if (numeroCaja !== null && numeroCaja !== undefined) {
-        localStorage.setItem('numeroCaja', String(numeroCaja))
+      // Procesamiento seguro del número de caja
+      if (numeroCaja !== null && numeroCaja !== undefined && numeroCaja !== '' && !isNaN(Number(numeroCaja))) {
+        this.numeroCaja = Number(numeroCaja)
+        localStorage.setItem('numeroCaja', String(this.numeroCaja))
       } else {
+        this.numeroCaja = null
         localStorage.removeItem('numeroCaja')
       }
     },
@@ -51,6 +53,7 @@ export const useAuthStore = defineStore('auth', {
       this.sucursal = null
       this.numeroCaja = null
       this.debeCambiarCredenciales = false
+      this.sincronizado = false
 
       localStorage.removeItem('token')
       localStorage.removeItem('rol')
@@ -64,9 +67,12 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('debeCambiarCredenciales', 'false')
     },
 
-    // Sincroniza contra el backend al recargar la app
+    // Sincroniza contra el backend al recargar la app sin pisar el número de caja si el backend no lo manda
     async sincronizarConBackend() {
-      if (!this.token) return
+      if (!this.token) {
+        this.sincronizado = true
+        return
+      }
 
       try {
         const response = await fetch('/api/auth/quien-soy', {
@@ -78,6 +84,7 @@ export const useAuthStore = defineStore('auth', {
 
         if (!response.ok) {
           this.cerrarSesion()
+          this.sincronizado = true
           return
         }
 
@@ -86,7 +93,6 @@ export const useAuthStore = defineStore('auth', {
         this.rol = data.rol
         this.sucursal = data.sucursal
         this.debeCambiarCredenciales = data.debeCambiarCredenciales
-        this.numeroCaja = data.numeroCaja ?? null
 
         localStorage.setItem('rol', data.rol)
         localStorage.setItem('debeCambiarCredenciales', String(data.debeCambiarCredenciales))
@@ -97,13 +103,20 @@ export const useAuthStore = defineStore('auth', {
           localStorage.removeItem('sucursal')
         }
 
-        if (data.numeroCaja !== null && data.numeroCaja !== undefined) {
-          localStorage.setItem('numeroCaja', String(data.numeroCaja))
-        } else {
-          localStorage.removeItem('numeroCaja')
+        // Solo actualizamos numeroCaja si viene definido en la respuesta
+        if (data.numeroCaja !== undefined) {
+          if (data.numeroCaja !== null && data.numeroCaja !== '' && !isNaN(Number(data.numeroCaja))) {
+            this.numeroCaja = Number(data.numeroCaja)
+            localStorage.setItem('numeroCaja', String(this.numeroCaja))
+          } else {
+            this.numeroCaja = null
+            localStorage.removeItem('numeroCaja')
+          }
         }
       } catch (error) {
         console.error('Error al sincronizar con el backend:', error)
+      } finally {
+        this.sincronizado = true
       }
     }
   }
