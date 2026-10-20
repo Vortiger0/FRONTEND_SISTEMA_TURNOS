@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
-  layout: false
+  requiereAuth: true
+  roles: ["CIUDADANO"]
 </route>
 
 <template>
@@ -61,7 +62,7 @@ meta:
     </div>
 
     <!-- 1. VISTA DETALLADA DE SUCURSAL (VENTANA EMERGENTE) -->
-    <q-dialog v-model="mostrarDetalle">
+    <q-dialog v-model="mostrarDetalle" @show="onMostrarDetalle">
       <q-card class="q-pa-md max-width-detalle width-100 radius-16">
         <div class="row justify-between items-center q-mb-md">
           <div class="text-h6 text-weight-bold text-uppercase text-grey-9">
@@ -71,11 +72,9 @@ meta:
         </div>
 
         <div class="row q-col-gutter-md items-center">
-          <!-- MAPA -->
+          <!-- MAPA DE LEAFLET (SOLO LECTURA) -->
           <div class="col-12 col-md-6">
-            <q-card flat bordered class="bg-grey-3 flex flex-center radius-12" style="height: 200px;">
-              <div class="text-h5 text-weight-bolder text-grey-6">MAPA</div>
-            </q-card>
+            <div id="mapa-ciudadano" style="height: 220px; width: 100%; border-radius: 12px; border: 1px solid #ccc;"></div>
           </div>
 
           <!-- DATOS DE LA SEDE -->
@@ -90,7 +89,7 @@ meta:
                 <div><strong>Dirección:</strong> {{ sedeSeleccionada?.direccion }}</div>
                 <div><strong>Horarios:</strong> {{ sedeSeleccionada?.horarios }}</div>
                 <div><strong>Teléfono:</strong> {{ sedeSeleccionada?.telefono }}</div>
-                <div><strong>Redes:</strong> {{ sedeSeleccionada?.redes }}</div>
+                <div><strong>Organismo:</strong> {{ sedeSeleccionada?.organismo }}</div>
               </div>
             </q-card>
           </div>
@@ -191,10 +190,12 @@ meta:
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from '../stores/auth-store';
+import { useAuthStore } from '../stores/auth-store'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -209,38 +210,46 @@ const mostrarConfirmacionTurno = ref(false)
 const confirmarLogout = ref(false)
 const procesandoTurno = ref(false)
 
-//array que contiene las sucursales
+// Variables para el mapa de Leaflet
+let map = null
+let marker = null
+
+// Array que contiene las sucursales
 const sedes = ref([])
-//llama al endpoint de las sucursales
+
+// Llama al endpoint de las sucursales
 const cargarSucursales = async() => {
   try {
-    const response = await fetch ('/api/sucursales')
+    const response = await fetch('/api/sucursales')
     const data = await response.json()
 
     if(!response.ok) {
       $q.notify({type: 'negative', message: 'No se pudieron cargar las sucursales' })
       return
     }
-    //el back devuelve cada sucursal con sus datos usando los nombres que el template ya espera
-    sedes.value = data.map((s)  => ({
+    
+    // Mapeo completo incluyendo latitud, longitud, horarios y teléfono que provee el backend
+    sedes.value = data.map((s) => ({
       id: s.id,
       nombre: s.nombre,
       estado: s.concurrencia,
       turnos: s.turnosPendientes,
       direccion: s.direccion,
-      organismo: s.organismo
+      organismo: s.organismo,
+      horarios: s.horarios,
+      telefono: s.telefono,
+      latitud: s.latitud,
+      longitud: s.longitud
     })) 
    } catch (error) {
     console.error('Error al cargar sucursales:', error)
     $q.notify({type: 'negative', message: 'No se pudo conectar con el servidor'})
-
   }
 }
 
-//es un "hook" (gancho) de vue que ejecuta apenas la pantalla termina de cargar en el navegador
 onMounted(() => {
   cargarSucursales()
-} )
+})
 
 const sedesFiltradas = computed(() => {
   if (!busqueda.value) return sedes.value
@@ -254,6 +263,42 @@ const abrirDetalle = (sede) => {
   mostrarDetalle.value = true
 }
 
+// Hook de Quasar que se dispara cuando el diálogo de detalle termina de abrirse y renderizarse en el DOM
+const onMostrarDetalle = async () => {
+  await nextTick()
+  inicializarMapa()
+}
+
+const inicializarMapa = () => {
+  const lat = sedeSeleccionada.value?.latitud
+  const lng = sedeSeleccionada.value?.longitud
+
+  if (!lat || !lng) return
+
+  // Destruir instancia anterior del mapa si existe para evitar conflictos de renderizado
+  if (map) {
+    map.remove()
+    map = null
+  }
+
+  // Inicializar Leaflet centrado en las coordenadas de la sede (Solo lectura)
+  map = L.map('mapa-ciudadano').setView([lat, lng], 15)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map)
+
+  // Colocar marcador estático informativo sin eventos de arrastre ni clics
+  marker = L.marker([lat, lng]).addTo(map)
+  marker.bindPopup(`<b>${sedeSeleccionada.value.nombre}</b><br>${sedeSeleccionada.value.direccion}`).openPopup()
+  
+  // Forzar recálculo de tamaño por estar dentro de un q-dialog
+  setTimeout(() => {
+    map.invalidateSize()
+  }, 100)
+}
+
 const solicitarTurno = () => {
   mostrarDetalle.value = false
   mostrarConfirmacionTurno.value = true
@@ -265,37 +310,34 @@ const volverADetalle = () => {
 }
 
 const confirmarTurno = async () => {
- procesandoTurno.value = true
+  procesandoTurno.value = true
 
- try {
-  //manda el pedido al backend, el authorization lleva el token guardado en la store
-  // el body manda el id de la sucursal que la persona ya había elegido
-  const response = await fetch ('/api/turnos', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authStore.token}`
+  try {
+    const response = await fetch('/api/turnos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({ sucursalId: sedeSeleccionada.value.id })
+    })
+    
+    const data = await response.json()
 
-    },
-    body: JSON.stringify({ sucursalId: sedeSeleccionada.value.id })
-  })
-  
-  const data = await response.json()
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'No se pudo sacar el turno'})
+      return
+    }
 
-  if (!response.ok) {
-    $q.notify({ type: 'negative', message: data.error || 'No se pudo sacar el turno'})
-    return
-  }
-
-  mostrarConfirmacionTurno.value = false
-  $q.notify({type: 'positive', message: `Turno confirmado. Tu número es el ${data.numero}` })
-  router.push('/misturnos')
+    mostrarConfirmacionTurno.value = false
+    $q.notify({type: 'positive', message: `Turno confirmado. Tu número es el ${data.numero}` })
+    router.push('/misturnos')
   } catch (error) {
     console.error('Error al sacar turno:', error)
-    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor'  })
-} finally {
-  procesandoTurno.value = false
-}
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    procesandoTurno.value = false
+  }
 }
 
 const textoVisible = (estado) => {

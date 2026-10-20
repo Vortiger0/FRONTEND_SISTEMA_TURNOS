@@ -90,6 +90,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/cambiar-credenciales': RouteRecordInfo<
+      '/cambiar-credenciales',
+      '/cambiar-credenciales',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/funcionario': RouteRecordInfo<
       '/funcionario',
       '/funcionario',
@@ -111,11 +118,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/pantalla-tv': RouteRecordInfo<
-      '/pantalla-tv',
-      '/pantalla-tv',
-      Record<never, never>,
-      Record<never, never>,
+    '/pantalla-tv/[sucursalId]': RouteRecordInfo<
+      '/pantalla-tv/[sucursalId]',
+      '/pantalla-tv/:sucursalId',
+      { sucursalId: ParamValue<true> },
+      { sucursalId: ParamValue<false> },
       | never
     >,
     '/registro': RouteRecordInfo<
@@ -132,11 +139,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/totem': RouteRecordInfo<
-      '/totem',
-      '/totem',
-      Record<never, never>,
-      Record<never, never>,
+    '/totem/[sucursalId]': RouteRecordInfo<
+      '/totem/[sucursalId]',
+      '/totem/:sucursalId',
+      { sucursalId: ParamValue<true> },
+      { sucursalId: ParamValue<false> },
       | never
     >,
   }
@@ -221,6 +228,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/cambiar-credenciales.vue': {
+      routes:
+        | '/cambiar-credenciales'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/funcionario.vue': {
       routes:
         | '/funcionario'
@@ -245,13 +260,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/pantalla-tv.vue': {
+    'src/pages/pantalla-tv/[sucursalId].vue': {
       routes:
-        | '/pantalla-tv'
+        | '/pantalla-tv/[sucursalId]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'sucursalId'
     }
     'src/pages/registro.vue': {
       routes:
@@ -269,13 +284,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/totem.vue': {
+    'src/pages/totem/[sucursalId].vue': {
       routes:
-        | '/totem'
+        | '/totem/[sucursalId]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'sucursalId'
     }
   }
 

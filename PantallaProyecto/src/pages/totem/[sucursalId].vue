@@ -1,6 +1,7 @@
 <route lang="yaml">
 meta:
   layout: false
+  requiereAuth: false
 </route>
 
 <template>
@@ -10,11 +11,11 @@ meta:
       <!-- PANTALLA 1: ESTADO INICIAL -->
       <q-card v-if="!turnoOtorgado" class="shadow-10 text-center radius-20 q-pa-md bg-white card-totem">
         
-        <!-- ENCABEZADO LOCAL CON BADGE INSTITUCIONAL -->
+        <!-- ENCABEZADO LOCAL CON NOMBRE DE SUCURSAL DINÁMICO -->
         <q-card-section class="q-pb-xs">
           <div class="row items-center justify-center q-gutter-x-xs text-caption text-grey-7 text-weight-bold text-uppercase letter-spacing-sm q-mb-xs">
             <q-icon name="place" color="primary" size="16px" />
-            <span>Abitab — Aparicio Saravia 598</span>
+            <span>{{ nombreSucursal }}</span>
           </div>
           
           <div class="text-h4 text-weight-bolder text-grey-9 q-mt-sm">
@@ -45,6 +46,7 @@ meta:
             unelevated
             icon="touch_app"
             class="full-width q-py-md text-bold btn-touch radius-16 shadow-4"
+            :loading="loading"
             @click="obtenerTurno"
           />
         </q-card-section>
@@ -65,7 +67,7 @@ meta:
         <q-card-section class="q-pb-none">
           <div class="row items-center justify-center q-gutter-x-xs text-caption text-grey-7 text-weight-bold text-uppercase letter-spacing-sm q-mb-xs">
             <q-icon name="place" color="primary" size="16px" />
-            <span>Abitab — Aparicio Saravia 598</span>
+            <span>{{ nombreSucursal }}</span>
           </div>
 
           <q-badge color="positive" class="q-px-lg q-py-xs text-caption text-weight-bold badge-redondeado q-mt-sm">
@@ -112,20 +114,69 @@ meta:
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
+import axios from 'axios'
 
-const contadorInterno = ref(28)
+const route = useRoute()
+const $q = useQuasar()
+
+const sucursalId = route.params.sucursalId
+
+// Mapeo dinámico según los IDs creados en el seed para mostrar el nombre real amigable
+const nombresSucursales = {
+  1: 'RedPagos — Sucursal Centro',
+  2: 'ASSE — Farmacia Hospital',
+  3: 'Abitab — Sucursal Centro',
+  4: 'Abitab — Sucursal TATA',
+  5: 'Abitab — Sucursal DORADO'
+}
+
+const nombreSucursal = computed(() => {
+  const id = Number(sucursalId)
+  return nombresSucursales[id] || `Sucursal ID: ${sucursalId || 'Desconocida'}`
+})
+
 const turnoOtorgado = ref(false)
 const miNumero = ref(null)
+const loading = ref(false)
 
 const segundosRestantes = ref(10)
 let temporizador = null
 
-const obtenerTurno = () => {
-  contadorInterno.value++
-  miNumero.value = contadorInterno.value
-  turnoOtorgado.value = true
-  iniciarTemporizador()
+const obtenerTurno = async () => {
+  const idNumerico = Number(sucursalId)
+
+  if (!idNumerico || isNaN(idNumerico)) {
+    $q.notify({
+      type: 'warning',
+      message: 'Debe especificar un ID de sucursal numérico en la ruta (ej: /totem/1)',
+      position: 'top'
+    })
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const response = await axios.post('/api/turnos', {
+      sucursalId: idNumerico
+    })
+
+    miNumero.value = response.data.numero
+    turnoOtorgado.value = true
+    iniciarTemporizador()
+  } catch (error) {
+    console.error('Error al generar el turno desde el tótem:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.error || 'No se pudo generar el turno. Intente nuevamente.',
+      position: 'top'
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
 const iniciarTemporizador = () => {
@@ -199,14 +250,13 @@ onUnmounted(() => {
 }
 
 .btn-touch {
-  transition: transform 0.15 ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-touch:active {
   transform: scale(0.96);
 }
 
-/* Efecto sutil de pulso en el ícono */
 .pulse-icon {
   animation: pulse 2s infinite;
 }
