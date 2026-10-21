@@ -1,130 +1,12 @@
-<script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-
-// Obtiene el sucursalId de la ruta (ej: /tv/1). Si no viene, por defecto toma '1'
-const sucursalId = ref(route.params.sucursalId || '1')
-
-const horaActual = ref('')
-const cajasActivas = ref([])
-const cargando = ref(true)
-
-// Control de audio y desbloqueo por políticas del navegador
-const audioPermitido = ref(false)
-const audioBeep = new Audio('/sounds/BEEEP.wav')
-// Mapa para rastrear el último turno sonado por cada caja (clave: numeroCaja, valor: numeroTurno)
-const ultimosTurnosSonados = ref({})
-
-let timerHora = null
-let timerPolling = null
-
-// Reloj en tiempo real
-const actualizarHora = () => {
-  const ahora = new Date()
-  const horas = String(ahora.getHours()).padStart(2, '0')
-  const minutos = String(ahora.getMinutes()).padStart(2, '0')
-  horaActual.value = `${horas}:${minutos}`
-}
-
-// Función para habilitar el audio por interacción del usuario (requerido por Chrome/Edge)
-const habilitarAudio = () => {
-  audioBeep.play().then(() => {
-    audioBeep.pause()
-    audioBeep.currentTime = 0
-    audioPermitido.value = true
-  }).catch(err => {
-    console.log("No se pudo habilitar el audio:", err)
-  })
-}
-
-// Reproducir sonido BEEEP
-const reproducirBeep = () => {
-  if (!audioPermitido.value) return
-  audioBeep.currentTime = 0
-  audioBeep.play().catch(error => {
-    console.error("Error al reproducir audio BEEEP:", error)
-  })
-}
-
-// Petición al backend /api/tv/:sucursalId
-const obtenerEstadoTV = async (esCargaInicial = false) => {
-  if (esCargaInicial) cargando.value = true
-
-  try {
-    const response = await fetch(`/api/tv/${sucursalId.value}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    })
-
-    if (!response.ok) throw new Error('Error al obtener estado de la TV')
-
-    const data = await response.json()
-    const nuevasCajas = data.cajas || []
-
-    // Revisar si hubo cambios en los turnos de atención para disparar el BEEEP
-    let huboCambioNuevoTurno = false
-
-    nuevasCajas.forEach(caja => {
-      const turnoActual = caja.numeroTurno
-      const turnoAnterior = ultimosTurnosSonados.value[caja.numeroCaja]
-
-      // Si la caja está atendiendo y el número de turno es nuevo o diferente al anterior
-      if (caja.estado === 'ATENDIENDO' && turnoActual && turnoActual !== turnoAnterior) {
-        huboCambioNuevoTurno = true
-        ultimosTurnosSonados.value[caja.numeroCaja] = turnoActual
-      } else if (caja.estado !== 'ATENDIENDO') {
-        // Limpiamos si ya no está atendiendo
-        ultimosTurnosSonados.value[caja.numeroCaja] = null
-      }
-    })
-
-    // Si detectamos un nuevo turno llamándose, emitimos el beep (evitamos beep en carga inicial)
-    if (huboCambioNuevoTurno && !esCargaInicial) {
-      reproducirBeep()
-    }
-
-    cajasActivas.value = nuevasCajas
-
-  } catch (error) {
-    console.error('Error al sincronizar monitor TV:', error)
-  } finally {
-    if (esCargaInicial) cargando.value = false
-  }
-}
-
-// Distribución automática de columnas según la cantidad de cajas
-const colClass = computed(() => {
-  const total = cajasActivas.value.length
-  if (total <= 2) return 'col-12 col-sm-6'
-  if (total === 3) return 'col-12 col-sm-4'
-  return 'col-12 col-sm-6 col-md-3'
-})
-
-onMounted(() => {
-  actualizarHora()
-  timerHora = setInterval(actualizarHora, 1000)
-
-  // Carga inicial de datos de la TV
-  obtenerEstadoTV(true)
-
-  // Polling automático cada 4 segundos para refrescar turnos y estados en tiempo real
-  timerPolling = setInterval(() => {
-    obtenerEstadoTV(false)
-  }, 4000)
-})
-
-onUnmounted(() => {
-  if (timerHora) clearInterval(timerHora)
-  if (timerPolling) clearInterval(timerPolling)
-})
-</script>
+<route lang="yaml">
+meta:
+  layout: false
+  requiereAuth: false
+</route>
 
 <template>
   <q-page class="fondo flex flex-center q-pa-lg select-none container-tv" @click="habilitarAudio">
     
-    <!-- AVISO FLOTANTE PARA ACTIVAR AUDIO SI EL NAVEGADOR LO BLOQUEA -->
     <q-banner v-if="!audioPermitido" class="bg-amber-10 text-white text-center fixed-top z-top q-py-xs shadow-2 cursor-pointer" @click="habilitarAudio">
       <template v-slot:avatar>
         <q-icon name="volume_off" color="white" />
@@ -134,7 +16,7 @@ onUnmounted(() => {
 
     <q-card class="shadow-10 radius-20 overflow-hidden full-width card-main glass-container">
       
-      <!-- ENCABEZADO TV CON HORA EN VIVO -->
+      <!-- ENCABEZADO TV CON NOMBRE DE SUCURSAL REAL -->
       <q-card-section class="bg-white row items-center justify-between q-px-xl q-py-lg bordered-bottom header-section">
         <div class="row items-center q-gutter-x-md">
           <q-icon name="live_tv" color="primary" size="2.8rem" />
@@ -143,7 +25,7 @@ onUnmounted(() => {
               Visualizador de Turnos
             </div>
             <div class="text-caption text-grey-7 text-weight-bold letter-spacing-sm">
-              SUCURSAL {{ sucursalId }} — SISTEMA DE ATENCIÓN
+              {{ nombreSucursal }}
             </div>
           </div>
         </div>
@@ -158,19 +40,16 @@ onUnmounted(() => {
 
       <!-- SECCIÓN DE CAJAS -->
       <q-card-section class="q-py-xl q-px-xl bg-grey-2 main-content flex flex-center">
-        <!-- Indicador de carga inicial -->
         <div v-if="cargando" class="flex flex-center q-pa-xl">
           <q-spinner color="primary" size="60px" />
         </div>
 
-        <!-- Grilla de Cajas conectada al Backend -->
         <div v-else class="row q-col-gutter-xl justify-center items-center full-width grid-cajas">
           <div
             v-for="caja in cajasActivas"
             :key="caja.numeroCaja"
             :class="colClass"
           >
-            <!-- TARJETAS DE CAJAS -->
             <q-card 
               class="shadow-4 radius-16 text-center q-pa-lg bg-white card-caja"
               :style="{ borderTopColor: caja.estado === 'ATENDIENDO' ? '#21ba45' : '#adb5bd' }"
@@ -179,7 +58,6 @@ onUnmounted(() => {
                 Caja {{ caja.numeroCaja }}
               </div>
 
-              <!-- BADGE DINÁMICO SEGÚN ESTADO -->
               <div class="row justify-center q-mb-md">
                 <q-badge 
                   :color="caja.estado === 'ATENDIENDO' ? 'primary' : 'grey-6'" 
@@ -195,14 +73,12 @@ onUnmounted(() => {
             </q-card>
           </div>
 
-          <!-- Mensaje si no hay cajas -->
           <div v-if="cajasActivas.length === 0" class="text-h6 text-grey-7">
             No hay cajas registradas para esta sucursal.
           </div>
         </div>
       </q-card-section>
 
-      <!-- SECCIÓN INFERIOR -->
       <q-card-section class="bg-white text-center q-py-lg bordered-top footer-section">
         <div class="text-subtitle1 text-weight-bolder text-grey-8 text-uppercase letter-spacing-sm">
           Manténgase atento a su llamado en pantalla y altoparlante
@@ -212,6 +88,116 @@ onUnmounted(() => {
     </q-card>
   </q-page>
 </template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const sucursalId = ref(route.params.sucursalId || '1')
+
+const nombreSucursal = ref('')
+const horaActual = ref('')
+const cajasActivas = ref([])
+const cargando = ref(true)
+
+const audioPermitido = ref(false)
+const audioBeep = new Audio('/sounds/BEEEP.wav')
+const ultimosTurnosSonados = ref({})
+
+let timerHora = null
+let timerPolling = null
+
+const actualizarHora = () => {
+  const ahora = new Date()
+  const horas = String(ahora.getHours()).padStart(2, '0')
+  const minutos = String(ahora.getMinutes()).padStart(2, '0')
+  horaActual.value = `${horas}:${minutos}`
+}
+
+const habilitarAudio = () => {
+  audioBeep.play().then(() => {
+    audioBeep.pause()
+    audioBeep.currentTime = 0
+    audioPermitido.value = true
+  }).catch(err => {
+    console.log("No se pudo habilitar el audio:", err)
+  })
+}
+
+const reproducirBeep = () => {
+  if (!audioPermitido.value) return
+  audioBeep.currentTime = 0
+  audioBeep.play().catch(error => {
+    console.error("Error al reproducir audio BEEEP:", error)
+  })
+}
+
+const obtenerEstadoTV = async (esCargaInicial = false) => {
+  if (esCargaInicial) cargando.value = true
+
+  try {
+    const response = await fetch(`/api/tv/${sucursalId.value}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (!response.ok) throw new Error('Error al obtener estado de la TV')
+
+    const data = await response.json()
+    
+    nombreSucursal.value = data.nombreSucursal || `SUCURSAL ${sucursalId.value}`
+    const nuevasCajas = data.cajas || []
+
+    let huboCambioNuevoTurno = false
+
+    nuevasCajas.forEach(caja => {
+      const turnoActual = caja.numeroTurno
+      const turnoAnterior = ultimosTurnosSonados.value[caja.numeroCaja]
+
+      if (caja.estado === 'ATENDIENDO' && turnoActual && turnoActual !== turnoAnterior) {
+        huboCambioNuevoTurno = true
+        ultimosTurnosSonados.value[caja.numeroCaja] = turnoActual
+      } else if (caja.estado !== 'ATENDIENDO') {
+        ultimosTurnosSonados.value[caja.numeroCaja] = null
+      }
+    })
+
+    if (huboCambioNuevoTurno && !esCargaInicial) {
+      reproducirBeep()
+    }
+
+    cajasActivas.value = nuevasCajas
+
+  } catch (error) {
+    console.error('Error al sincronizar monitor TV:', error)
+  } finally {
+    if (esCargaInicial) cargando.value = false
+  }
+}
+
+const colClass = computed(() => {
+  const total = cajasActivas.value.length
+  if (total <= 2) return 'col-12 col-sm-6'
+  if (total === 3) return 'col-12 col-sm-4'
+  return 'col-12 col-sm-6 col-md-3'
+})
+
+onMounted(() => {
+  actualizarHora()
+  timerHora = setInterval(actualizarHora, 1000)
+  obtenerEstadoTV(true)
+
+  timerPolling = setInterval(() => {
+    obtenerEstadoTV(false)
+  }, 4000)
+})
+
+onUnmounted(() => {
+  if (timerHora) clearInterval(timerHora)
+  if (timerPolling) clearInterval(timerPolling)
+})
+</script>
 
 <style scoped>
 .fondo {
@@ -230,7 +216,6 @@ onUnmounted(() => {
 .radius-16 { border-radius: 16px; }
 .radius-12 { border-radius: 12px; }
 
-/* CLASE PARA BORDES TOTALMENTE REDONDEADOS (TIPO PÍLDORA) */
 .badge-redondeado {
   border-radius: 50px !important;
 }
@@ -241,19 +226,16 @@ onUnmounted(() => {
 .font-mono { font-family: monospace; }
 .letter-spacing-sm { letter-spacing: 2px; }
 
-/* EFECTO CARD CAJA */
 .card-caja {
   border-top: 6px solid #21ba45;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* NÚMERO EN TAMAÑO TV HORIZONTAL */
 .numero-caja { 
   font-size: 7rem; 
   line-height: 1; 
 }
 
-/* ADAPTACIÓN AUTOMÁTICA PARA PANTALLAS VERTICALES */
 @media (orientation: portrait) {
   .container-tv {
     padding: 1rem !important;
