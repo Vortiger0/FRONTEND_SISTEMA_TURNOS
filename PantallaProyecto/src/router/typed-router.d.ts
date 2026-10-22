@@ -97,6 +97,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/contraseña': RouteRecordInfo<
+      '/contraseña',
+      '/contrase%C3%B1a',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/correo': RouteRecordInfo<
+      '/correo',
+      '/correo',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/funcionario': RouteRecordInfo<
       '/funcionario',
       '/funcionario',
@@ -231,6 +245,22 @@ declare module 'vue-router/auto-routes' {
     'src/pages/cambiar-credenciales.vue': {
       routes:
         | '/cambiar-credenciales'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/contraseña.vue': {
+      routes:
+        | '/contraseña'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/correo.vue': {
+      routes:
+        | '/correo'
       views:
         | never
       pathParamNames:

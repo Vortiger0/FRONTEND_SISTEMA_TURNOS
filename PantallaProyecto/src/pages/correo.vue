@@ -1,0 +1,131 @@
+<route lang="yaml">
+meta:
+  layout: false
+</route>
+
+<template>
+  <q-page class="fondo flex flex-center q-pa-md">
+    <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 420px;">
+
+      <q-card-section class="text-center q-pt-xs">
+        <q-icon name="lock_reset" color="warning" size="4rem" />
+        <div class="text-h5 text-weight-bold text-grey-9 q-mt-sm">
+          Correo de recuperación
+        </div>
+        <div class="text-caption text-grey-7 q-mt-xs">
+          Ingresa tu correo
+        </div>
+      </q-card-section>
+
+      <q-card-section class="q-gutter-y-md">
+        <!-- Correo de recuperación -->
+        <q-input
+          v-model="correo"
+          label="Ingresa tu correo"
+          outlined
+          dense
+        >
+          <template #prepend>
+            <q-icon name="email" />
+          </template>
+
+        </q-input>
+
+        <!-- BOTÓN DE PROCEDER -->
+        <q-btn
+          label="Verificar"
+          color="primary"
+          unelevated
+          class="full-width q-py-sm text-bold"
+          style="border-radius: 10px;"
+          :loading="cargando"
+          @click="crearCorreo"
+        />
+      </q-card-section>
+
+      <!-- OPCIÓN DE SALIR -->
+      <q-card-section class="text-center q-pt-none">
+        <q-btn
+          flat
+          dense
+          no-caps
+          label="Atras"
+          color="blue-10"
+          class="text-weight-bold"
+          @click="cerrarSesion"
+        />
+      </q-card-section>
+
+    </q-card>
+  </q-page>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useAuthStore } from '../stores/auth-store'
+
+const router = useRouter()
+const $q = useQuasar()
+const authStore = useAuthStore()
+
+const correo = ref('')
+const cargando = ref(false)
+
+const crearCorreo = async () => {
+  if (!correo.value) {
+    $q.notify({ type: 'warning', message: 'Por favor completa los campos' })
+    return
+  }
+
+  cargando.value = true
+
+  // ESTA PARTE LA DEJO POR SI SIRVE, SINO BORRALA
+
+  try {
+    /* const response = await fetch('/api/auth/correo', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({
+        correo: correo.value,
+     })
+    })
+
+    const data = await response.json()
+
+    $q.notify({ type: 'positive', message: data.mensaje || 'Correo verificado.' })
+
+    */
+
+    // Redirigimos a nueva contraseña
+    router.push('/contraseña')
+
+  } catch (error) {
+    console.error('Error de red:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    cargando.value = false
+  }
+}
+
+const cerrarSesion = () => {
+  authStore.cerrarSesion()
+  router.push('/login')
+}
+</script>
+
+<style scoped>
+.fondo {
+  background: linear-gradient(to bottom, #3d8ae2, #1c4779);
+  min-height: 100vh;
+}
+
+.card-redondeada {
+  border-radius: 20px;
+  overflow: hidden;
+}
+</style>

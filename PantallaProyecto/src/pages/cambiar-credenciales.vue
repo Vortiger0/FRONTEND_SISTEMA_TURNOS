@@ -57,6 +57,18 @@ meta:
           </template>
         </q-input>
 
+         <!-- NUEVA CONTRASEÑA (Mín 8 caracteres) -->
+        <q-input
+          v-model="correo"
+          label="Ingrese un correo de recuperación"
+          outlined
+          dense
+        >
+          <template #prepend>
+            <q-icon name="email" />
+          </template>
+        </q-input>
+
         <!-- BOTÓN DE GUARDAR -->
         <q-btn
           label="Guardar y Continuar"
@@ -99,10 +111,11 @@ const authStore = useAuthStore()
 const nuevoUsuario = ref('')
 const nuevaContrasena = ref('')
 const confirmarContrasena = ref('')
+const correo = ref('')
 const cargando = ref(false)
 
 const cambiarCredenciales = async () => {
-  if (!nuevoUsuario.value || !nuevaContrasena.value || !confirmarContrasena.value) {
+  if (!nuevoUsuario.value || !nuevaContrasena.value || !confirmarContrasena.value || !correo.value) {
     $q.notify({ type: 'warning', message: 'Por favor completa todos los campos' })
     return
   }
