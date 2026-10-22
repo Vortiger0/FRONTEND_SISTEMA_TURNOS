@@ -64,11 +64,9 @@ meta:
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from '../stores/auth-store'
 
 const router = useRouter()
 const $q = useQuasar()
-const authStore = useAuthStore()
 
 const correo = ref('')
 const cargando = ref(false)
@@ -81,14 +79,11 @@ const crearCorreo = async () => {
 
   cargando.value = true
 
-  // ESTA PARTE LA DEJO POR SI SIRVE, SINO BORRALA
-
   try {
-    /* const response = await fetch('/api/auth/correo', {
-      method: 'PUT',
+     const response = await fetch('/api/auth/olvide-contrasena', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authStore.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         correo: correo.value,
@@ -97,12 +92,7 @@ const crearCorreo = async () => {
 
     const data = await response.json()
 
-    $q.notify({ type: 'positive', message: data.mensaje || 'Correo verificado.' })
-
-    */
-
-    // Redirigimos a nueva contraseña
-    router.push('/contraseña')
+    $q.notify({ type: 'positive', message: data.mensaje })
 
   } catch (error) {
     console.error('Error de red:', error)
@@ -110,11 +100,6 @@ const crearCorreo = async () => {
   } finally {
     cargando.value = false
   }
-}
-
-const cerrarSesion = () => {
-  authStore.cerrarSesion()
-  router.push('/login')
 }
 </script>
 

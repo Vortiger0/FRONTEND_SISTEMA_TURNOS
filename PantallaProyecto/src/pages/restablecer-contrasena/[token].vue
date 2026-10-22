@@ -53,7 +53,7 @@ meta:
           class="full-width q-py-sm text-bold"
           style="border-radius: 10px;"
           :loading="cargando"
-          @click="guardarContrasenas"
+          @click="cambiarContrasena"
         />
       </q-card-section>
 
@@ -66,7 +66,7 @@ meta:
           label="Atras"
           color="Blue"
           class="text-weight-bold"
-          @click="cerrarSesion"
+          @click="router.push('/login')"
         />
       </q-card-section>
 
@@ -76,24 +76,20 @@ meta:
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from '../stores/auth-store'
 
 const router = useRouter()
+const route = useRoute()
 const $q = useQuasar()
-const authStore = useAuthStore()
+
+const token = route.params.token
 
 const nuevaContrasena = ref('')
 const confirmarContrasena = ref('')
 const cargando = ref(false)
 
-const guardarContrasena = async () => {
-  if (!nuevaContrasena.value || !confirmarContrasena.value) {
-    $q.notify({ type: 'warning', message: 'Por favor completa todos los campos' })
-    return
-  }
-
+const cambiarContrasena = async () => {
   if (nuevaContrasena.value.length < 8) {
     $q.notify({ type: 'warning', message: 'La contraseña debe tener al menos 8 caracteres' })
     return
@@ -107,41 +103,32 @@ const guardarContrasena = async () => {
   cargando.value = true
 
   try {
-    /* const response = await fetch('/api/auth/contraseña', {
-      method: 'PUT',
+     const response = await fetch('/api/auth/restablecer-contrasena', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authStore.token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        nuevoUsuario: nuevoUsuario.value,
-        nuevaContrasena: nuevaContrasena.value
+        token, nuevaContrasena: nuevaContrasena.value
       })
     })
 
     const data = await response.json()
 
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'No se pudo actualizar la contraseña' })
+      return
+    }
+
     $q.notify({ type: 'positive', message: data.mensaje || 'Contraseña actualizada correctamente' })
-
-    */
-
-    // Cerramos la sesión actual para obligar al usuario a loguearse con su nueva contraseña
-    authStore.cerrarSesion()
-
-    // Redirigimos al login
     router.push('/login')
 
   } catch (error) {
-    console.error('Error de red:', error)
+    console.error(error)
     $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
   } finally {
     cargando.value = false
   }
-}
-
-const cerrarSesion = () => {
-  authStore.cerrarSesion()
-  router.push('/login')
 }
 </script>
 

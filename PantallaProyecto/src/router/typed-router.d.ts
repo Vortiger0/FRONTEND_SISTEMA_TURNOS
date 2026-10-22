@@ -97,13 +97,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/contraseña': RouteRecordInfo<
-      '/contraseña',
-      '/contrase%C3%B1a',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/correo': RouteRecordInfo<
       '/correo',
       '/correo',
@@ -144,6 +137,13 @@ declare module 'vue-router/auto-routes' {
       '/registro',
       Record<never, never>,
       Record<never, never>,
+      | never
+    >,
+    '/restablecer-contrasena/[token]': RouteRecordInfo<
+      '/restablecer-contrasena/[token]',
+      '/restablecer-contrasena/:token',
+      { token: ParamValue<true> },
+      { token: ParamValue<false> },
       | never
     >,
     '/sacar-turno': RouteRecordInfo<
@@ -250,14 +250,6 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/contraseña.vue': {
-      routes:
-        | '/contraseña'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
     'src/pages/correo.vue': {
       routes:
         | '/correo'
@@ -305,6 +297,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/restablecer-contrasena/[token].vue': {
+      routes:
+        | '/restablecer-contrasena/[token]'
+      views:
+        | never
+      pathParamNames:
+        | 'token'
     }
     'src/pages/sacar-turno.vue': {
       routes:
