@@ -5,7 +5,19 @@ meta:
 
 <template>
   <q-page class="fondo flex flex-center q-pa-md">
-    <q-card class="shadow-3 q-pa-md card-redondeada" style="width: 100%; max-width: 420px;">
+    <q-card class="shadow-3 card-redondeada" style="width: 100%; max-width: 420px;">
+
+      <!-- ENCABEZADO CON BOTÓN DE REGRESO -->
+      <q-card-section class="q-pb-none q-pt-md q-px-md">
+        <q-btn
+          flat
+          round
+          dense
+          icon="arrow_back"
+          color="grey-8"
+          @click="router.push('/login')"
+        />
+      </q-card-section>
 
       <q-card-section class="text-center q-pt-xs">
         <q-icon name="lock_reset" color="warning" size="4rem" />
@@ -28,31 +40,17 @@ meta:
           <template #prepend>
             <q-icon name="email" />
           </template>
-
         </q-input>
 
         <!-- BOTÓN DE PROCEDER -->
         <q-btn
-          label="Verificar"
+          label="VERIFICAR"
           color="primary"
           unelevated
           class="full-width q-py-sm text-bold"
           style="border-radius: 10px;"
           :loading="cargando"
           @click="crearCorreo"
-        />
-      </q-card-section>
-
-      <!-- OPCIÓN DE SALIR -->
-      <q-card-section class="text-center q-pt-none">
-        <q-btn
-          flat
-          dense
-          no-caps
-          label="Atras"
-          color="blue-10"
-          class="text-weight-bold"
-          @click="cerrarSesion"
         />
       </q-card-section>
 
@@ -73,26 +71,32 @@ const cargando = ref(false)
 
 const crearCorreo = async () => {
   if (!correo.value) {
-    $q.notify({ type: 'warning', message: 'Por favor completa los campos' })
+    $q.notify({ type: 'warning', message: 'Por favor ingresa tu correo' })
     return
   }
 
   cargando.value = true
 
   try {
-     const response = await fetch('/api/auth/olvide-contrasena', {
+    const response = await fetch('/api/auth/olvide-contrasena', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        correo: correo.value,
-     })
+        correo: correo.value
+      })
     })
 
     const data = await response.json()
 
-    $q.notify({ type: 'positive', message: data.mensaje })
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'Error al procesar la solicitud' })
+      return
+    }
+
+    $q.notify({ type: 'positive', message: data.mensaje || 'Si el correo existe, te enviamos las instrucciones' })
+    router.push('/contraseña')
 
   } catch (error) {
     console.error('Error de red:', error)
