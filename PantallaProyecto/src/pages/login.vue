@@ -157,7 +157,8 @@ const iniciarSesion = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         identificador: identificador.value,
-        contrasena: password.value
+        contrasena: password.value,
+        esFuncionario: esFuncionario.value //Booleano del switch (true/false)
       })
     })
 
