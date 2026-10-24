@@ -30,6 +30,11 @@ meta:
           </div>
         </q-card-section>
 
+         <!-- AVISOS PUSH -->                                  
+        <q-card-section class="q-pa-md q-pb-none">
+          <BotonAvisos />
+        </q-card-section>
+
         <!-- LISTADO DE TURNOS -->
         <q-card-section class="q-pa-md">
           <div v-if="misTurnos && misTurnos.length > 0" class="q-gutter-y-sm">
@@ -163,7 +168,7 @@ meta:
               icon="cancel"
               class="full-width radius-12 text-bold q-py-sm"
               @click="solicitarCancelacion"
-            />
+            />http://localhost:9000/
           </q-card-actions>
 
         </q-card>
@@ -211,6 +216,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
+import BotonAvisos from '../components/BotonAvisos.vue'
 
 const router = useRouter()
 const $q = useQuasar()
