@@ -146,7 +146,8 @@ const cambiarCredenciales = async () => {
       },
       body: JSON.stringify({
         nuevoUsuario: nuevoUsuario.value,
-        nuevaContrasena: nuevaContrasena.value
+        nuevaContrasena: nuevaContrasena.value,
+        correo: correo.value
       })
     })
 
