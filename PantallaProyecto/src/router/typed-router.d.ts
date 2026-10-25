@@ -97,6 +97,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/correo': RouteRecordInfo<
+      '/correo',
+      '/correo',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/funcionario': RouteRecordInfo<
       '/funcionario',
       '/funcionario',
@@ -130,6 +137,13 @@ declare module 'vue-router/auto-routes' {
       '/registro',
       Record<never, never>,
       Record<never, never>,
+      | never
+    >,
+    '/restablecer-contrasena/[token]': RouteRecordInfo<
+      '/restablecer-contrasena/[token]',
+      '/restablecer-contrasena/:token',
+      { token: ParamValue<true> },
+      { token: ParamValue<false> },
       | never
     >,
     '/sacar-turno': RouteRecordInfo<
@@ -236,6 +250,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/correo.vue': {
+      routes:
+        | '/correo'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/funcionario.vue': {
       routes:
         | '/funcionario'
@@ -275,6 +297,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/restablecer-contrasena/[token].vue': {
+      routes:
+        | '/restablecer-contrasena/[token]'
+      views:
+        | never
+      pathParamNames:
+        | 'token'
     }
     'src/pages/sacar-turno.vue': {
       routes:

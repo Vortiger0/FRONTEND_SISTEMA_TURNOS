@@ -14,20 +14,11 @@ meta:
     </div>
 
     <!-- row + q-col-gutter-md: acomoda las tarjetas en fila -->
-    <div v-else class="row q-col-gutter-md justify-center">
+    <div v-else class="row q-col-gutter-md justify-center full-width" style="max-width: 1100px;">
 
-      <!-- Cada tarjeta ocupa una columna (col-12 en móviles, col-4 en escritorio) -->
+      <!-- FILA 1: 3 TARJETAS -->
       <div class="col-12 col-md-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
-          <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Turnos hoy</div> 
-          <div class="text-h2 text-weight-bold text-primary">
-            {{ turnosHoy }}
-          </div>
-        </q-card>
-      </div> 
-
-      <div class="col-12 col-md-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Número actual</div>
           <div class="text-h2 text-weight-bold text-primary">
             {{ numeroActual ? `#${numeroActual}` : '--' }}
@@ -36,7 +27,7 @@ meta:
       </div>
 
       <div class="col-12 col-md-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Estado del local</div>
           <div class="text-h2 text-weight-bold" :class="colorEstado">
             {{ estadoLocal }}
@@ -45,7 +36,7 @@ meta:
       </div>
 
       <div class="col-12 col-md-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Atendidos hoy</div>
           <div class="text-h2 text-weight-bold text-primary">
             {{ atendidos }}
@@ -53,8 +44,9 @@ meta:
         </q-card>
       </div>
 
+      <!-- FILA 2: 1 TARJETA CENTRADA DEBAJO -->
       <div class="col-12 col-md-4">
-        <q-card class="card-redondeada shadow-2 text-center q-pa-lg" style="min-width: 300px;">
+        <q-card class="card-redondeada shadow-2 text-center q-pa-lg">
           <div class="text-caption text-weight-bold text-grey-10 q-mt-xs">Ausentes hoy</div>
           <div class="text-h2 text-weight-bold text-primary">
             {{ ausentes }}
@@ -74,7 +66,6 @@ import { useAuthStore } from '../../stores/auth-store'
 const $q = useQuasar()
 const authStore = useAuthStore()
 
-const turnosHoy = ref(0)
 const numeroActual = ref(null)
 const estadoLocal = ref('Cerrado')
 const atendidos = ref(0)
@@ -105,8 +96,7 @@ const obtenerMetricas = async (esCargaInicial = false) => {
     
     const data = await response.json()
 
-    // Mapeo exacto con los datos que devuelve tu función obtenerResumenInicio
-    turnosHoy.value = data.turnosHoy
+    // Mapeo exacto con los datos que devuelve tu función obtenerResumenInicio (sin turnosHoy)
     numeroActual.value = data.numeroActual
     estadoLocal.value = data.estadoLocal
     atendidos.value = data.atendidosHoy

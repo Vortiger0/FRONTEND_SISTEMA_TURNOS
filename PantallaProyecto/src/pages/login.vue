@@ -104,6 +104,20 @@ meta:
         </div>
       </q-card-section>
 
+      <q-card-section class="text-center q-pt-none">
+        <div class="text-body2 text-grey-8">
+          <q-btn
+            flat
+            dense
+            no-caps
+            label="¿Olvidaste tu contraseña?"
+            color="primary"
+            class="text-weight-bold"
+            to="/correo"
+          />
+        </div>
+      </q-card-section>
+
     </q-card>
   </q-page>
 </template>
@@ -143,7 +157,8 @@ const iniciarSesion = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         identificador: identificador.value,
-        contrasena: password.value
+        contrasena: password.value,
+        esFuncionario: esFuncionario.value //Booleano del switch (true/false)
       })
     })
 

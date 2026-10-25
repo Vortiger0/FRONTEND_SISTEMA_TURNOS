@@ -30,6 +30,11 @@ meta:
           </div>
         </q-card-section>
 
+        <!-- AVISOS PUSH -->                                  
+        <q-card-section class="q-pa-md q-pb-none">
+          <BotonAvisos />
+        </q-card-section>
+
         <!-- LISTADO DE TURNOS -->
         <q-card-section class="q-pa-md">
           <div v-if="misTurnos && misTurnos.length > 0" class="q-gutter-y-sm">
@@ -144,6 +149,37 @@ meta:
               </div>
             </div>
 
+            <!-- FILA VIRTUAL -->
+            <q-separator class="q-my-md" />
+
+            <div class="text-left">
+              <div class="text-subtitle2 text-weight-bold text-grey-9 q-mb-xs row items-center q-gutter-x-xs">
+                <q-icon name="people" color="primary" size="18px" />
+                <span>Turnos antes que el tuyo:</span>
+              </div>
+
+              <div v-if="cargandoFila" class="text-center q-py-sm">
+                <q-spinner color="primary" size="24px" />
+              </div>
+
+              <div v-else-if="filaVirtual.length > 0" class="q-gutter-y-xs">
+                <div 
+                  v-for="t in filaVirtual" 
+                  :key="t.id"
+                  class="row items-center justify-between bg-grey-1 q-px-md q-py-xs radius-8"
+                >
+                  <span class="text-weight-bold text-primary font-mono">#{{ t.numero }}</span>
+                  <span class="text-caption text-grey-7">
+                    {{ t.estado === 'ACTIVO' ? 'En espera' : t.estado === 'EN_ATENCION' ? 'Atendiendo' : 'Finalizado' }}
+                  </span>
+                </div>
+              </div>
+
+              <div v-else class="text-caption text-grey-6 italic text-center q-py-sm">
+                ¡Estás al frente de la fila o eres el siguiente en ser llamado!
+              </div>
+            </div>
+
             <q-banner rounded class="bg-blue-1 text-primary q-mt-lg text-left radius-12">
               <template #avatar>
                 <q-icon name="info" color="primary" />
@@ -211,6 +247,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
+import BotonAvisos from '../components/BotonAvisos.vue'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -222,14 +259,15 @@ const modalConfirmarCancelacion = ref(false)
 const turnoSeleccionado = ref(null)
 const cargandoCancelacion = ref(false)
 
-// Función auxiliar para formatear la fecha ISO que viene del backend a hora legible (ej: 14:32 hs)
+const filaVirtual = ref([])
+const cargandoFila = ref(false)
+
 const formatearHora = (fechaIso) => {
   if (!fechaIso) return ''
   const fecha = new Date(fechaIso)
   return fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' hs'
 }
 
-// Cargar turnos activos del ciudadano autenticado
 const cargarMisTurnos = async () => {
   try {
     const response = await fetch('/api/turnos/mis-turnos', {
@@ -258,9 +296,30 @@ onMounted(() => {
   cargarMisTurnos()
 })
 
-const abrirDetalle = (turno) => {
+const abrirDetalle = async (turno) => {
   turnoSeleccionado.value = turno
   modalDetalle.value = true
+  filaVirtual.value = []
+
+  try {
+    cargandoFila.value = true
+    const response = await fetch(`/api/turnos/${turno.id}/fila-virtual`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      filaVirtual.value = data.filaVirtual || []
+    }
+  } catch (error) {
+    console.error('Error al cargar fila virtual:', error)
+  } finally {
+    cargandoFila.value = false
+  }
 }
 
 const solicitarCancelacion = () => {
@@ -291,7 +350,6 @@ const ejecutarCancelacion = async () => {
 
     $q.notify({ type: 'positive', message: data.mensaje || 'Turno cancelado correctamente' })
 
-    // Ocultar modales y actualizar listado reactivo
     modalConfirmarCancelacion.value = false
     modalDetalle.value = false
     misTurnos.value = misTurnos.value.filter(t => t.id !== targetId)
@@ -312,41 +370,19 @@ const ejecutarCancelacion = async () => {
   min-height: 100vh;
 }
 
-.radius-20 {
-  border-radius: 20px;
-}
-
-.radius-16 {
-  border-radius: 16px;
-}
-
-.radius-12 {
-  border-radius: 12px;
-}
-
-.radius-8 {
-  border-radius: 8px;
-}
+.radius-20 { border-radius: 20px; }
+.radius-16 { border-radius: 16px; }
+.radius-12 { border-radius: 12px; }
+.radius-8 { border-radius: 8px; }
 
 .badge-redondeado {
   border-radius: 50px !important;
 }
 
-.select-none {
-  user-select: none;
-}
-
-.letter-spacing-sm {
-  letter-spacing: 1px;
-}
-
-.font-mono {
-  font-family: monospace;
-}
-
-.bordered-bottom {
-  border-bottom: 1px solid #e2e8f0;
-}
+.select-none { user-select: none; }
+.letter-spacing-sm { letter-spacing: 1px; }
+.font-mono { font-family: monospace; }
+.bordered-bottom { border-bottom: 1px solid #e2e8f0; }
 
 .card-turno {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
