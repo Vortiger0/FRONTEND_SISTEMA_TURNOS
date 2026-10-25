@@ -1,4 +1,5 @@
 // Service worker de notificaciones push (se sirve desde la raiz: /sw.js)
+//escucha cuando llega un push y le pide al navegador que muestre la notificacion
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))

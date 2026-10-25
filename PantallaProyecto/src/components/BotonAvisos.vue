@@ -68,18 +68,9 @@ const $q = useQuasar()
 const authStore = useAuthStore()
  
 const soportado = soportaPush()
+//controla cual de los 3 banners se muestra, arranca en inactivo hasta confirmar la realidad del navegador
 const estado = ref<'inactivo' | 'activo' | 'bloqueado'>('inactivo')
 const cargando = ref(false)
- 
-const diag = JSON.stringify({
-  seguro: window.isSecureContext,
-  sw: 'serviceWorker' in navigator,
-  pm: 'PushManager' in window,
-  n: 'Notification' in window,
-  url: location.href,
-  soportaPush: soportaPush(),
-  navegador: navigator.userAgent,
-})
 
 // lee el estado real del navegador
 const refrescarEstado = async () => {
@@ -137,14 +128,7 @@ const desactivar = async () => {
   } finally {
     cargando.value = false
   }
-  const diag = JSON.stringify({
-  seguro: window.isSecureContext,
-  sw: 'serviceWorker' in navigator,
-  pm: 'PushManager' in window,
-  n: 'Notification' in window,
-  url: location.href,
-  navegador: navigator.userAgent,
-})
+  
 }
 </script>
  

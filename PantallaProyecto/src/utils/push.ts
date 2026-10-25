@@ -1,3 +1,4 @@
+//pasa la clave publica vapid de formato base64 a bytes que es el formato que exige pushManager.subscribe()
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
     const padding = '='.repeat((4-(base64String.length % 4)) %4)
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g,'/')
@@ -7,12 +8,14 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
         return salida
 }
 
+// chequea si el navegador tiene las 3 APIs necesarias para push
 export const soportaPush = (): boolean =>
   typeof window !== 'undefined' &&
   'serviceWorker' in navigator &&
   'PushManager' in window &&
     'Notification' in window
 
+// chequea si este dispositivo especifico tiene una suscripcion activa en este momento
 export async function  hayDispositivoSuscripto():Promise<boolean> {
     if (!soportaPush()) return false 
     const reg = await navigator.serviceWorker.getRegistration()
@@ -20,6 +23,8 @@ export async function  hayDispositivoSuscripto():Promise<boolean> {
     return Boolean(suscripcion)
 }
 
+//flujo de activacion: pide permiso, registra el service worker, obtiene/crea la suscripcion
+//y la manda al back donde queda guardada
 export async function activarAvisos(token: string): Promise <'ok' | 'denegado'> {
     const permiso = await Notification.requestPermission()
     if(permiso !== 'granted') return 'denegado'
@@ -32,6 +37,7 @@ export async function activarAvisos(token: string): Promise <'ok' | 'denegado'> 
     }
     const { clavePublica } = (await respuestaClave.json()) as {clavePublica: string}
     
+    //reutiliza la suscripcion si ya existia, o crea una nueva con la clave publica convertida a bytes
     const suscripcion =
     (await reg.pushManager.getSubscription()) ??
     (await reg.pushManager.subscribe({
@@ -51,6 +57,7 @@ export async function activarAvisos(token: string): Promise <'ok' | 'denegado'> 
         
         return 'ok'
 }
+//avisa al back que borre esta suscripcion, y desuscribe al dispositivo del lado del navegador
 export async function desactivarAvisos(token: string): Promise <void> {
     if (!soportaPush()) return
     
@@ -63,7 +70,7 @@ export async function desactivarAvisos(token: string): Promise <void> {
             method: 'DELETE',
             headers: {
                 'Content-Type':'application/json',
-                Authorization:`Bearer${token}`,
+                Authorization:`Bearer ${token}`,
             },
             body:JSON.stringify({ endpoint: suscripcion.endpoint }),
         })
