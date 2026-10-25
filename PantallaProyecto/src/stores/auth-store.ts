@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useSucursalStore } from './sucursal-store';
+import { desactivarAvisos } from '@/utils/push'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -48,6 +49,12 @@ export const useAuthStore = defineStore('auth', {
 
     // Limpia todo al cerrar sesión, incluyendo el número de caja
     cerrarSesion() {
+
+      //antes de borrar el token, se desuscribe este dispositivo de los avisos push
+      if (this.rol === 'CIUDADANO' && this.token){
+        desactivarAvisos(this.token).catch((error)=> console.error('Error al desactivar los avisos:',error))
+      }
+
       this.token = null
       this.rol = null
       this.sucursal = null
