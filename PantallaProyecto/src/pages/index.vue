@@ -83,6 +83,15 @@ meta:
               <div class="text-subtitle1 text-weight-bold text-center text-uppercase q-mb-sm text-primary">
                 {{ sedeSeleccionada?.nombre }}
               </div>
+              
+              <!-- ESTADO DEL LOCAL (ABIERTO / CERRADO) IGUAL QUE EN ADMIN -->
+              <div class="text-center q-mb-sm">
+                <span class="text-caption text-weight-bold text-grey-8">Estado: </span>
+                <span class="text-weight-bold" :class="colorEstadoLocal(sedeSeleccionada?.estadoLocal)">
+                  {{ sedeSeleccionada?.estadoLocal || 'Cerrado' }}
+                </span>
+              </div>
+
               <q-separator class="q-mb-sm" />
               
               <div class="text-caption text-grey-9 q-gutter-y-xs">
@@ -228,11 +237,12 @@ const cargarSucursales = async() => {
       return
     }
     
-    // Mapeo completo incluyendo latitud, longitud, horarios y teléfono que provee el backend
+    // Mapeo completo incluyendo el estado del local (Abierto/Cerrado) devuelto por backend
     sedes.value = data.map((s) => ({
       id: s.id,
       nombre: s.nombre,
       estado: s.concurrencia,
+      estadoLocal: s.estadoLocal || (s.abierto ? 'Abierto' : 'Cerrado'), // Asegura compatibilidad con la propiedad del admin
       turnos: s.turnosPendientes,
       direccion: s.direccion,
       organismo: s.organismo,
@@ -338,6 +348,11 @@ const confirmarTurno = async () => {
   } finally {
     procesandoTurno.value = false
   }
+}
+
+// Función idéntica a la del panel de admin para dar color al texto Abierto/Cerrado
+const colorEstadoLocal = (estado) => {
+  return estado === 'Abierto' ? 'text-positive' : 'text-negative'
 }
 
 const textoVisible = (estado) => {
