@@ -6,5 +6,6 @@ allowBuilds:
   electron-winstaller: true
   esbuild: true
   lightningcss: true
+  pnpm: true
   rolldown: true
   unrs-resolver: true
