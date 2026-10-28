@@ -243,11 +243,12 @@ meta:
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
 import BotonAvisos from '../components/BotonAvisos.vue'
+import { socket } from '../utils/socket'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -292,18 +293,11 @@ const cargarMisTurnos = async () => {
   }
 }
 
-onMounted(() => {
-  cargarMisTurnos()
-})
-
-const abrirDetalle = async (turno) => {
-  turnoSeleccionado.value = turno
-  modalDetalle.value = true
-  filaVirtual.value = []
+const cargarFilaVirtual = async (turnoId, esRecarga = false) => {
 
   try {
-    cargandoFila.value = true
-    const response = await fetch(`/api/turnos/${turno.id}/fila-virtual`, {
+    if (!esRecarga) cargandoFila.value = true
+    const response = await fetch(`/api/turnos/${turnoId}/fila-virtual`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -318,8 +312,36 @@ const abrirDetalle = async (turno) => {
   } catch (error) {
     console.error('Error al cargar fila virtual:', error)
   } finally {
-    cargandoFila.value = false
+   if(!esRecarga) cargandoFila.value = false
   }
+}
+
+const alRecibirActualizacion = () => {
+  cargarMisTurnos()
+
+  if(modalDetalle.value && turnoSeleccionado.value) {
+    cargarFilaVirtual(turnoSeleccionado.value.id, true)
+  }
+}
+
+
+onMounted(() => {
+  cargarMisTurnos()
+  socket.on('cola-actualizada', alRecibirActualizacion)
+  socket.on('connect', alRecibirActualizacion)
+})
+
+onUnmounted(()  => {
+  socket.off('cola-actualizada', alRecibirActualizacion)
+  socket.off('connect', alRecibirActualizacion)
+})
+
+const abrirDetalle = async (turno) => {
+  turnoSeleccionado.value = turno
+  modalDetalle.value = true
+  filaVirtual.value = []
+
+  await cargarFilaVirtual(turno.id)
 }
 
 const solicitarCancelacion = () => {

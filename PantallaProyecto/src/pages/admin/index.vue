@@ -62,6 +62,7 @@ meta:
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../../stores/auth-store'
+import { socket } from '../../utils/socket'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -112,19 +113,26 @@ const obtenerMetricas = async (esCargaInicial = false) => {
   }
 }
 
+const alRecibirActualizacion = () => obtenerMetricas(false)
+
 onMounted(() => {
   // Carga inicial
   obtenerMetricas(true)
 
+  socket.on('cola-actualizada', alRecibirActualizacion)
+  socket.on('connect', alRecibirActualizacion)
+
   // Polling: Actualiza los datos automáticamente cada 10 segundos
   timerPolling = setInterval(() => {
     obtenerMetricas(false)
-  }, 10000)
+  }, 20000)
 })
 
 onUnmounted(() => {
   // Limpia el intervalo al salir de la vista para evitar fugas de memoria
   if (timerPolling) clearInterval(timerPolling)
+  socket.off('cola-actualizada', alRecibirActualizacion)
+  socket.off('connect', alRecibirActualizacion)
 })
 </script>
 

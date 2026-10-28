@@ -199,12 +199,13 @@ meta:
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth-store'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { socket } from '../utils/socket'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -259,7 +260,15 @@ const cargarSucursales = async() => {
 
 onMounted(() => {
   cargarSucursales()
+  //cualquier cambio en cualquier sucursal recarga la lista completa
+  socket.on('cola-actualizada', cargarSucursales)
+  socket.on('connect', cargarSucursales)
 })
+
+onUnmounted(() => {
+  socket.off('cola-actualizada', cargarSucursales)
+  socket.off('connect', cargarSucursales)
+} )
 
 const sedesFiltradas = computed(() => {
   if (!busqueda.value) return sedes.value

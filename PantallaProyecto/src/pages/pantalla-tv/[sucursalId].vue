@@ -92,6 +92,7 @@ meta:
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { socket } from '../../utils/socket'
 
 const route = useRoute()
 const sucursalId = ref(route.params.sucursalId || '1')
@@ -183,19 +184,33 @@ const colClass = computed(() => {
   return 'col-12 col-sm-6 col-md-3'
 })
 
+//el back manda el evento de actualizacion con la id de la sucursal para que sea chequeado por cada pantalla tv y verifique si corresponde a su sucursal antes de actualizar
+const alRecibirActualizacion = (payload) => {
+  if (String(payload.sucursalId) === String(sucursalId.value)) {
+    obtenerEstadoTV(false)
+  }
+}
+
 onMounted(() => {
   actualizarHora()
   timerHora = setInterval(actualizarHora, 1000)
   obtenerEstadoTV(true)
 
+  //cuando llegue el evento del back ejecuta la funcion de arriba
+  socket.on('cola-actualizada', alRecibirActualizacion)
+  //en caso de desconexión, es necesaria una reconexión para ponerse al tanto de lo perdido
+  socket.on('connect', () => obtenerEstadoTV(false))
+
+  //se deja el polling en caso de que el socket falle
   timerPolling = setInterval(() => {
     obtenerEstadoTV(false)
-  }, 4000)
+  }, 20000)
 })
 
 onUnmounted(() => {
   if (timerHora) clearInterval(timerHora)
   if (timerPolling) clearInterval(timerPolling)
+  socket.off('cola-actualizada', alRecibirActualizacion)
 })
 </script>
 
