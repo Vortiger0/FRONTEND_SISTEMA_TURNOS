@@ -39,47 +39,75 @@ meta:
       </q-card-section>
 
       <!-- SECCIÓN DE CAJAS -->
-      <q-card-section class="q-py-xl q-px-xl bg-grey-2 main-content flex flex-center">
+      <q-card-section class="q-py-lg q-px-xl bg-grey-2 main-content">
         <div v-if="cargando" class="flex flex-center q-pa-xl">
           <q-spinner color="primary" size="60px" />
         </div>
 
-        <div v-else class="row q-col-gutter-xl justify-center items-center full-width grid-cajas">
-          <div
-            v-for="caja in cajasActivas"
-            :key="caja.numeroCaja"
-            :class="colClass"
-          >
-            <q-card 
-              class="shadow-4 radius-16 text-center q-pa-lg bg-white card-caja"
-              :style="{ borderTopColor: caja.estado === 'ATENDIENDO' ? '#21ba45' : '#adb5bd' }"
+        <template v-else>
+          <!-- CAJAS ACTIVAS -->
+          <div class="row q-col-gutter-lg justify-center items-center full-width grid-cajas q-mb-lg">
+            <div
+              v-for="caja in cajasActivas"
+              :key="caja.numeroCaja"
+              :class="colClass"
             >
-              <div class="text-h4 text-weight-bolder text-grey-9 q-mb-xs caja-nombre">
-                Caja {{ caja.numeroCaja }}
-              </div>
+              <q-card 
+                class="shadow-4 radius-16 text-center q-pa-md bg-white card-caja"
+                :style="{ borderTopColor: caja.estado === 'ATENDIENDO' ? '#21ba45' : '#adb5bd' }"
+              >
+                <div class="text-h5 text-weight-bolder text-grey-9 q-mb-xs caja-nombre">
+                  Caja {{ caja.numeroCaja }}
+                </div>
 
-              <div class="row justify-center q-mb-md">
-                <q-badge 
-                  :color="caja.estado === 'ATENDIENDO' ? 'primary' : 'grey-6'" 
-                  class="q-px-lg q-py-xs text-caption text-weight-bold badge-redondeado label-atendiendo"
+                <div class="row justify-center q-mb-sm">
+                  <q-badge 
+                    :color="caja.estado === 'ATENDIENDO' ? 'primary' : 'grey-6'" 
+                    class="q-px-md q-py-xs text-caption text-weight-bold badge-redondeado label-atendiendo"
+                  >
+                    {{ caja.estado === 'ATENDIENDO' ? 'ATENDIENDO AHORA' : 'DISPONIBLE' }}
+                  </q-badge>
+                </div>
+
+                <div class="text-weight-bolder numero-caja" :class="caja.estado === 'ATENDIENDO' ? 'text-positive' : 'text-grey-5'">
+                  {{ caja.numeroTurno ? `#${caja.numeroTurno}` : '--' }}
+                </div>
+              </q-card>
+            </div>
+
+            <div v-if="cajasActivas.length === 0" class="text-h6 text-grey-7 text-center">
+              No hay cajas registradas para esta sucursal.
+            </div>
+          </div>
+
+          <!-- NUEVA SECCIÓN: VISTA PREVIA DE LA FILA (PRÓXIMOS TURNOS) -->
+          <q-card flat bordered class="q-pa-md radius-16 bg-white shadow-1 row items-center justify-between q-mt-md queue-preview-card">
+            <div class="row items-center q-gutter-x-sm">
+              <q-icon name="upcoming" color="primary" size="2rem" />
+              <div class="text-subtitle1 text-weight-bold text-grey-9 text-uppercase">
+                Próximos en fila:
+              </div>
+            </div>
+
+            <div class="row q-gutter-x-md items-center">
+              <template v-if="proximosTurnos.length > 0">
+                <div 
+                  v-for="(turno, index) in proximosTurnos" 
+                  :key="index"
+                  class="bg-blue-1 text-primary text-h6 text-weight-bolder q-px-lg q-py-xs radius-12 border-primary-light"
                 >
-                  {{ caja.estado === 'ATENDIENDO' ? 'ATENDIENDO AHORA' : 'DISPONIBLE' }}
-                </q-badge>
+                  #{{ turno }}
+                </div>
+              </template>
+              <div v-else class="text-body2 text-grey-6 text-italic">
+                No hay más turnos en espera
               </div>
-
-              <div class="text-weight-bolder numero-caja" :class="caja.estado === 'ATENDIENDO' ? 'text-positive' : 'text-grey-5'">
-                {{ caja.numeroTurno ? `#${caja.numeroTurno}` : '--' }}
-              </div>
-            </q-card>
-          </div>
-
-          <div v-if="cajasActivas.length === 0" class="text-h6 text-grey-7">
-            No hay cajas registradas para esta sucursal.
-          </div>
-        </div>
+            </div>
+          </q-card>
+        </template>
       </q-card-section>
 
-      <q-card-section class="bg-white text-center q-py-lg bordered-top footer-section">
+      <q-card-section class="bg-white text-center q-py-md bordered-top footer-section">
         <div class="text-subtitle1 text-weight-bolder text-grey-8 text-uppercase letter-spacing-sm">
           Manténgase atento a su llamado en pantalla y altoparlante
         </div>
@@ -100,6 +128,7 @@ const sucursalId = ref(route.params.sucursalId || '1')
 const nombreSucursal = ref('')
 const horaActual = ref('')
 const cajasActivas = ref([])
+const proximosTurnos = ref([]) // Almacena los próximos números en espera
 const cargando = ref(true)
 
 const audioPermitido = ref(false)
@@ -149,6 +178,7 @@ const obtenerEstadoTV = async (esCargaInicial = false) => {
     
     nombreSucursal.value = data.nombreSucursal || `SUCURSAL ${sucursalId.value}`
     const nuevasCajas = data.cajas || []
+    proximosTurnos.value = data.proximosTurnos || [] // Actualiza los próximos turnos
 
     let huboCambioNuevoTurno = false
 
@@ -184,7 +214,6 @@ const colClass = computed(() => {
   return 'col-12 col-sm-6 col-md-3'
 })
 
-//el back manda el evento de actualizacion con la id de la sucursal para que sea chequeado por cada pantalla tv y verifique si corresponde a su sucursal antes de actualizar
 const alRecibirActualizacion = (payload) => {
   if (String(payload.sucursalId) === String(sucursalId.value)) {
     obtenerEstadoTV(false)
@@ -196,12 +225,9 @@ onMounted(() => {
   timerHora = setInterval(actualizarHora, 1000)
   obtenerEstadoTV(true)
 
-  //cuando llegue el evento del back ejecuta la funcion de arriba
   socket.on('cola-actualizada', alRecibirActualizacion)
-  //en caso de desconexión, es necesaria una reconexión para ponerse al tanto de lo perdido
   socket.on('connect', () => obtenerEstadoTV(false))
 
-  //se deja el polling en caso de que el socket falle
   timerPolling = setInterval(() => {
     obtenerEstadoTV(false)
   }, 20000)
@@ -247,8 +273,12 @@ onUnmounted(() => {
 }
 
 .numero-caja { 
-  font-size: 7rem; 
+  font-size: 5.5rem; 
   line-height: 1; 
+}
+
+.border-primary-light {
+  border: 1px solid rgba(33, 150, 243, 0.3);
 }
 
 @media (orientation: portrait) {
@@ -272,47 +302,27 @@ onUnmounted(() => {
   }
 
   .header-title {
-    font-size: 1.6rem !important;
+    font-size: 1.5rem !important;
   }
 
   .header-clock {
-    font-size: 2.2rem !important;
+    font-size: 2rem !important;
   }
 
   .main-content {
     flex: 1;
     display: flex;
-    align-items: center;
-    padding: 1rem !important;
-  }
-
-  .grid-cajas {
-    margin-top: -8px !important;
-    margin-bottom: -8px !important;
-  }
-
-  .grid-cajas > div {
-    padding-top: 8px !important;
-    padding-bottom: 8px !important;
-  }
-
-  .col-12, .col-sm-6, .col-sm-4, .col-md-3 {
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-  }
-
-  .card-caja {
+    flex-direction: column;
+    justify-content: center;
     padding: 1rem !important;
   }
 
   .caja-nombre {
-    font-size: 1.8rem !important;
-    margin-bottom: 0.2rem !important;
+    font-size: 1.5rem !important;
   }
 
   .numero-caja {
-    font-size: 4.8rem !important;
+    font-size: 3.8rem !important;
   }
 
   .footer-section {

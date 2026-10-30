@@ -1,7 +1,6 @@
 <template>
   <div>
      
-   <!-- <div>PRUEBA: {{ diag }}</div> -->
     
     <div v-if="!soportado">
       <q-banner rounded class="bg-grey-3 text-grey-8 radius-12">
