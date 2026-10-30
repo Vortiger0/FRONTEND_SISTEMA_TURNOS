@@ -96,7 +96,7 @@ const crearCorreo = async () => {
     }
 
     $q.notify({ type: 'positive', message: data.mensaje || 'Si el correo existe, te enviamos las instrucciones' })
-    router.push('/contraseña')
+    router.push('/login')
 
   } catch (error) {
     console.error('Error de red:', error)
