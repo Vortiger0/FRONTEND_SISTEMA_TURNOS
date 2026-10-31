@@ -5,18 +5,27 @@ meta:
 </route>
 
 <template>
-  <q-page class="fondo q-pa-md">
-    <div class="max-width-container margin-auto q-pt-md">
-      
-      <!-- CABECERA: BOTÓN MIS TURNOS & LOGOUT -->
-      <div class="row items-center justify-between q-mb-md">
+<q-layout view="lHh Lpr lfF" class="fondo">
+
+  <!-- BANNER -->
+  <q-header elevated style="backgroun-color: #1976d2; color: blue;">
+  <q-toolbar class="q-px-sm q-py-sm">
+
         <q-btn
           label="MIS TURNOS"
-          icon="confirmation_number"
+          icon="img:/icons/turno.png"
           unelevated
           class="btn-mis-turnos-blanco text-bold radius-12 q-px-md"
           to="/misturnos"
         />
+
+  <q-space />
+
+         <div square class="logo-container q-mr-md">
+        <img src="/icons/paraNAV.png" alt="icon" class="logo-nav">
+         </div>
+
+      <q-space />
 
         <q-btn
           flat
@@ -28,6 +37,14 @@ meta:
         >
           <q-tooltip>Cerrar sesión</q-tooltip>
         </q-btn>
+
+        </q-toolbar>
+      </q-header>
+
+  <q-page-container>
+    <q-page class="q-pa-md">
+      <div class="max-width-container margin-auto q-pt-md">
+        <div class="row items-center justify-between q-mb-md">
       </div>
 
       <!-- GRID DE SEDES (CATÁLOGO) -->
@@ -196,6 +213,9 @@ meta:
     </q-dialog>
 
   </q-page>
+
+  </q-page-container>
+  </q-layout>
 </template>
 
 <script setup>
@@ -432,5 +452,24 @@ const cerrarSesion = () => {
 
 .btn-mis-turnos-blanco:active {
   transform: translateY(0);
+}
+
+.btn-mis-turnos-blanco :deep(.q-icon img) {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.logo-continer {
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.logo-nav {
+  height: 40px !important;
+  width: auto !important; 
+  max-height: none !important;
+  object-fit: contain;
 }
 </style>
