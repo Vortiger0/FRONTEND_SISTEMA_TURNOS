@@ -88,6 +88,7 @@ export default defineConfig(ctx => {
       // vueDevtools: true,
       // https: true,
       open: true,
+      host: "0.0.0.0",
       //Proxy de desarrollo: cualquier pedido que el navegador haga a "/api/...
       //lo redirige internamente al backend real (localhost:3000), sin que el
       //navegador se entere de que son dos puertos distintos. Así evitamos que

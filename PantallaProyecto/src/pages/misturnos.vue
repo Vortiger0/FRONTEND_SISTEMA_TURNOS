@@ -105,7 +105,7 @@ meta:
 
       <!-- 1. DIÁLOGO DETALLE DEL TURNO -->
       <q-dialog v-model="modalDetalle">
-        <q-card style="width: 100%; max-width: 400px;" class="radius-20 overflow-hidden">
+        <q-card style="width: 100%; max-width: 400px; max-height: 90vh; display: flex; flex-direction: column;" class="radius-20 overflow-hidden">
           
           <!-- ENCABEZADO DEL DETALLE -->
           <q-card-section class="bg-grey-2 row items-center justify-between q-px-md q-py-sm bordered-bottom">
@@ -115,7 +115,7 @@ meta:
             <q-btn icon="close" flat round dense v-close-popup />
           </q-card-section>
 
-          <q-card-section v-if="turnoSeleccionado" class="text-center q-pa-lg">
+          <q-card-section v-if="turnoSeleccionado" class="text-center q-pa-lg" style= "overflow-y: auto;">
             <!-- NÚMERO DESTACADO -->
             <div class="text-caption text-weight-bold text-grey-7 text-uppercase">
               Número de atención
