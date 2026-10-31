@@ -12,6 +12,10 @@
       <q-btn flat label="Funcionarios" to="/admin/datosFuncionario" />
       <q-btn flat label="Datos del local" to="/admin/datos-local" />
       <q-space></q-space>
+
+      <q-avatar square class="logo-container q-mr-md">
+        <img src="/icons/paraNAV.png" alt="Admin icon" class="logo-nav">
+      </q-avatar>
       
       <!-- Se reemplaza 'to="/login"' por el evento que abre el diálogo -->
       <q-btn flat icon="logout" @click="mostrarConfirmacion = true" />
@@ -57,4 +61,17 @@ const cerrarSesion = () => {
 </script>
 
 <style>
+
+.logo-continer {
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.logo-nav {
+  height: 38px !important;
+  width: auto !important; 
+  max-height: none !important;
+  object-fit: contain;
+}
 </style>

@@ -21,11 +21,9 @@ meta:
 
       <!-- CABECERA ADAPTATIVA -->
       <q-card-section class="text-center q-pt-xs">
-        <q-icon
-          :name="esFuncionario ? 'admin_panel_settings' : 'account_circle'"
-          :color="esFuncionario ? 'secondary' : 'primary'"
-          size="4rem"
-        />
+        <div class="login-icon q-mb-sm">
+          <img src="/icons/login.png" alt="logo" class="login-logo" />
+        </div>
         <div class="text-h5 text-weight-bold text-grey-9 q-mt-sm">
           {{ esFuncionario ? 'Acceso Funcionario' : 'Acceso Ciudadano' }}
         </div>
@@ -218,5 +216,18 @@ const iniciarSesion = async () => {
 :deep(.q-field__label) {
   font-weight: 700 !important;
   font-size: 15px !important;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.login-logo {
+  height: 80px !important;
+  width: auto !important; 
+  max-height: none !important;
+  object-fit: contain;
 }
 </style>

@@ -13,7 +13,7 @@ meta:
       <q-card class="shadow-10 radius-20 overflow-hidden bg-white">
         
         <!-- ENCABEZADO CON BOTÓN DE REGRESO -->
-        <q-card-section class="bg-primary text-white q-pa-lg">
+        <q-card-section class="bg-primary text-white q-py-sm q-px-lg">
           <div class="row items-center justify-between">
             <q-btn
               flat
@@ -26,7 +26,7 @@ meta:
             <div class="text-h6 text-weight-bolder text-uppercase letter-spacing-sm">
               Mis Turnos Activos
             </div>
-            <q-icon name="confirmation_number" size="1.8rem" />
+            <q-icon name="img:/icons/misturnos.png" size="4rem" />
           </div>
         </q-card-section>
 
