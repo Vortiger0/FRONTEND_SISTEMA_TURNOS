@@ -154,11 +154,37 @@ const cajaFuncionario = computed(() => {
   return authStore.numeroCaja ?? '-'
 })
 
+//pregunta al back que turno está atendiendo este funcionario en este momento
+//de ese modo si se recarga la pag, la pantalla recupera el turno
+const cargarTurnoActual = async () => {
+  try {
+    const response = await fetch('/api/funcionario/actual', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      $q.notify({ type: 'negative', message: data.error || 'No se pudo recuperar el turno en curso'})
+      return
+    }
+    
+    //trae el turno En atencion o null si no hay ninguno
+    turnoActual.value = data.turno
+  } catch (error) {
+    console.error('Error de red:', error)
+  }
+}
+
 // Sincronizar con el backend al cargar la vista si falta información en el store
 onMounted(async () => {
   if (authStore.token && !authStore.numeroCaja) {
     await authStore.sincronizarConBackend()
   }
+  //cada vez que se abre o recarga la pantalla, recupera el turno en curso desde la bd
+  await cargarTurnoActual()
 })
 
 // Llamar al siguiente turno
