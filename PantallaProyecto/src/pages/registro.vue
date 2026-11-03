@@ -118,7 +118,7 @@ if (!response.ok) {
 }
 
 //si todo salió bien muestra mensaje de éxito que manda el backend y recién ahí manda a la persona al login
-$q.notify({ type: 'positive', messsage: data.message})
+$q.notify({ type: 'positive', message: data.message})
 router.push('/login')
 } catch (error) {
   //esto captura fallas reales de conexió (ej: backend apagado, no hay conexión a internet, etc) disntinto al "if (!response.ok)" de arriba
