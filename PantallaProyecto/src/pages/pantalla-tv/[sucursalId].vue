@@ -132,7 +132,7 @@ const proximosTurnos = ref([]) // Almacena los próximos números en espera
 const cargando = ref(true)
 
 const audioPermitido = ref(false)
-const audioBeep = new Audio('/sounds/BEEEP.wav')
+const audioBeep = new Audio('/sounds/DING1.mp3')
 const ultimosTurnosSonados = ref({})
 
 let timerHora = null
