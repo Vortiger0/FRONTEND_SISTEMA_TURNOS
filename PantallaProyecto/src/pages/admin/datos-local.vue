@@ -33,6 +33,8 @@ meta:
             label-color="grey-9"
             input-class="text-weight-bold text-grey-10 text-body1"
             :disable="cargando"
+            :loading="buscandoDireccion"
+            hint="Dirección autocompletada, en base a la selección del mapa"
           >
             <template #prepend>
               <q-icon name="place" color="primary" size="22px" />
@@ -86,9 +88,10 @@ meta:
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from '@/stores/auth-store'
+import { direccionDesdeCoordenadas } from '@/utils/geocodificacion'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
@@ -218,10 +221,43 @@ onMounted(async () => {
     latitud.value = evento.latlng.lat
     longitud.value = evento.latlng.lng
     marcador.setLatLng(evento.latlng)
+    actualizarDireccionDesdeMapa() // hace lo que dice
   })
 
   // Carga inicial de datos desde el backend
   await obtenerDatosLocal()
+})
+const buscandoDireccion = ref(false)
+let temporizador = null
+let controlador = null
+
+// Convierte el punto elegido en una dirección.
+// Espera 1 segundo desde el último clic y borra/descarta la seleccion anterior.
+const actualizarDireccionDesdeMapa = () => {
+  clearTimeout(temporizador)
+  if (controlador) controlador.abort()
+
+  temporizador = setTimeout(async () => {
+    controlador = new AbortController()
+    buscandoDireccion.value = true
+    try {
+      direccion.value = await direccionDesdeCoordenadas(latitud.value, longitud.value, controlador.signal)
+    } catch (error) {
+      if (error.name === 'AbortError') return
+      console.error('Error al obtener la dirección:', error)
+      $q.notify({
+        type: 'warning',
+        message: error.message || 'No se pudo obtener la dirección. Podés escribirla a mano.'
+      })
+    } finally {
+      buscandoDireccion.value = false
+    }
+  }, 1000)
+}
+
+onBeforeUnmount(() => {
+  clearTimeout(temporizador)
+  if (controlador) controlador.abort()
 })
 </script>
 

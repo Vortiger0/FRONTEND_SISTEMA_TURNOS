@@ -11,10 +11,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover<% } %>"
     />
+    <!-- se cambio "content=" para que permita nominatim -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org;<% if (ctx.dev) { %> connect-src 'self' ws://localhost:*; worker-src 'self' blob:;<% } %>"
-    />
+      
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://*.tile.openstreetmap.org; connect-src 'self' https://nominatim.openstreetmap.org<% if (ctx.dev) { %> ws://localhost:*<% } %>;<% if (ctx.dev) { %> worker-src 'self' blob:;<% } %>"    />
 
     <link
       rel="icon"
