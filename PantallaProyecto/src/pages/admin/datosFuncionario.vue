@@ -280,7 +280,10 @@ const obtenerFuncionarios = async () => {
     })
     if (!response.ok) throw new Error('Error al obtener la lista de funcionarios')
     const data = await response.json()
-    funcionarios.value = data
+    funcionarios.value = data.map(f => ({
+      ...f,
+      nombreCompleto: f.usuario?.nombreCompleto,
+    }))
   } catch (error) {
     console.error('Error al consultar funcionarios:', error)
     $q.notify({
@@ -365,10 +368,18 @@ const guardarFuncionario = async () => {
 
 // DELETE: Eliminar funcionario
 const eliminarFuncionario = async (funcionario) => {
-  const confirmado = window.confirm(`¿Estás seguro de eliminar a ${funcionario.nombreCompleto}?`)
-  
-  if (!confirmado) return
+  $q.dialog({
+    title: 'Eliminar funcionario',
+    message: `¿Estás seguro de que deseas eliminar al funcionario? Esta acción no se puede deshacer.`,
+    cancel: { label: 'Cancelar', flat: true },
+    ok: { label: 'Eliminar', color: 'negative' },
+    persistent: true
+  }).onOk(async () => {
+    await confirmarEliminacion(funcionario)
+  })
+  }
 
+  const confirmarEliminacion = async (funcionario) => {
   try {
     if (!funcionario.id) {
       throw new Error('ID de funcionario no válido')
