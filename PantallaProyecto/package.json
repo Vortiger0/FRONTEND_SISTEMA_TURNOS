@@ -24,12 +24,14 @@
   "dependencies": {
     "@quasar/extras": "^2.0.4",
     "axios": "^1.20.0",
+    "chart.js": "^4.6.1",
     "leaflet": "^1.9.4",
     "pinia": "^4.0.2",
     "pnpm": "^12.15.0",
     "quasar": "^2.27.0",
     "socket.io-client": "^4.8.4",
     "vue": "^3.5.22",
+    "vue-chartjs": "^5.3.4",
     "vue-i18n": "^11.3.0",
     "vue-router": "^5.0.6"
   },
