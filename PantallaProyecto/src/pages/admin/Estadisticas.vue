@@ -171,6 +171,8 @@ meta:
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import {
   Chart as ChartJS,
   Title,
@@ -195,9 +197,10 @@ ChartJS.register(
 )
 
 const authStore = useAuthStore()
-
-// Iniciamos por defecto en 90 días
-const periodoSeleccionado = ref(90)
+const $q = useQuasar()
+const router = useRouter()
+// Iniciamos por defecto en 15 días
+const periodoSeleccionado = ref(15)
 const opcionesPeriodo = [
   { label: 'Últimos 15 días', value: 15 },
   { label: 'Últimos 30 días', value: 30 },
@@ -206,7 +209,7 @@ const opcionesPeriodo = [
 
 const cargando = ref(false)
 const datosBackend = ref({
-  dias: 90,
+  dias: 15,
   desde: '',
   total: 0,
   porEstado: { FINALIZADO: 0, AUSENTE: 0, CANCELADO: 0, EXPIRADO: 0 },
@@ -229,6 +232,13 @@ const cargarEstadisticas = async () => {
       credentials: 'include'
     })
 
+    if (response.status === 401) {
+    
+      authStore.cerrarSesion()
+      router.push('/login')
+      return
+    }
+
     if (!response.ok) {
       throw new Error(`Error HTTP: ${response.status}`)
     }
@@ -237,6 +247,7 @@ const cargarEstadisticas = async () => {
     datosBackend.value = data
   } catch (error) {
     console.error('Error al cargar estadísticas:', error)
+    $q.notify({ color: 'negative', message: 'No se pudieron cargar las estadísticas' })
   } finally {
     cargando.value = false
   }
@@ -269,7 +280,7 @@ const porcentajeAusentes = computed(() => {
   return Math.round((ausentes / totalTurnos.value) * 100)
 })
 
-const esAlertaAtendidos = computed(() => porcentajeAtendidos.value > 70)
+const esAlertaAtendidos = computed(() => porcentajeAtendidos.value < 70)
 
 const diasReordenados = computed(() => {
   const original = datosBackend.value.porDiaSemana
