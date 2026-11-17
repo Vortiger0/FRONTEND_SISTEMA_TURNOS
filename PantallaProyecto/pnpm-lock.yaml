@@ -14,6 +14,9 @@ importers:
       axios:
         specifier: ^1.20.0
         version: 1.20.0(supports-color@8.1.1)
+      chart.js:
+        specifier: ^4.6.1
+        version: 4.6.1
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -28,10 +31,13 @@ importers:
         version: 2.29.0
       socket.io-client:
         specifier: ^4.8.4
-        version: 4.8.4
+        version: 4.8.4(supports-color@8.1.1)
       vue:
         specifier: ^3.5.22
         version: 3.5.42(typescript@6.0.3)
+      vue-chartjs:
+        specifier: ^5.3.4
+        version: 5.3.4(chart.js@4.6.1)(vue@3.5.42(typescript@6.0.3))
       vue-i18n:
         specifier: ^11.3.0
         version: 11.4.10(vue@3.5.42(typescript@6.0.3))
@@ -389,6 +395,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@kurkle/color@0.3.4':
+    resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
   '@noble/hashes@1.4.0':
     resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
@@ -1277,6 +1286,10 @@ packages:
 
   caniuse-lite@1.0.30001810:
     resolution: {integrity: sha512-TITQPUkaz+aVk5GL6NhOdwk1aEaNTSDPsGFWrTuhKGtjTF70jL/Oht2W4c6rXUe5fu7Ie19VIahAXHIIiWWNeg==}
+
+  chart.js@4.6.1:
+    resolution: {integrity: sha512-hJyniucsFmq//EvXYvJ6c6mahPoI3kaxdjVH8awTaJ/fDNWeSqqqArixMJWkWNN6fcYvPU3HneSANFNYtRi61g==}
+    engines: {pnpm: '>=8'}
 
   chokidar@5.0.0:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
@@ -2464,6 +2477,12 @@ packages:
   vscode-uri@3.2.0:
     resolution: {integrity: sha512-m2gXo3bn0G1kT9InzMf07fTbqMbGtyckj3bH5ktLO+1Ssv+yiATZ4dhwaQv9UZWxJh6E9IFGnQyjgWVDWVBDrg==}
 
+  vue-chartjs@5.3.4:
+    resolution: {integrity: sha512-x3Fqob8RQvrTdssfi9ecsCzEkFOd8JPmNwSkSQzdfKj/uBsRJs/Y88cZcZIEcPsTVfMGwMo4MOoihoDG2DoE/g==}
+    peerDependencies:
+      chart.js: ^4.1.1
+      vue: ^3.0.0-0 || ^2.7.0
+
   vue-i18n@11.4.10:
     resolution: {integrity: sha512-Lp+BjOxqzOY87DS6Z8KrQrpiTr9IN/Lt4kZEilwyXG2Wrx+AcU6IVsAW92HNXtVcn1HFFPV6ty41p9e/qDpyvg==}
     engines: {node: '>= 22'}
@@ -2796,6 +2815,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  '@kurkle/color@0.3.4': {}
 
   '@noble/hashes@1.4.0': {}
 
@@ -3545,6 +3566,10 @@ snapshots:
 
   caniuse-lite@1.0.30001810: {}
 
+  chart.js@4.6.1:
+    dependencies:
+      '@kurkle/color': 0.3.4
+
   chokidar@5.0.0:
     dependencies:
       readdirp: 5.1.1
@@ -3637,7 +3662,7 @@ snapshots:
 
   encodeurl@2.0.0: {}
 
-  engine.io-client@6.6.7:
+  engine.io-client@6.6.7(supports-color@8.1.1):
     dependencies:
       '@socket.io/component-emitter': 3.1.2
       debug: 4.4.3(supports-color@8.1.1)
@@ -4517,18 +4542,18 @@ snapshots:
 
   sisteransi@1.0.5: {}
 
-  socket.io-client@4.8.4:
+  socket.io-client@4.8.4(supports-color@8.1.1):
     dependencies:
       '@socket.io/component-emitter': 3.1.2
       debug: 4.4.3(supports-color@8.1.1)
-      engine.io-client: 6.6.7
-      socket.io-parser: 4.2.7
+      engine.io-client: 6.6.7(supports-color@8.1.1)
+      socket.io-parser: 4.2.7(supports-color@8.1.1)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
 
-  socket.io-parser@4.2.7:
+  socket.io-parser@4.2.7(supports-color@8.1.1):
     dependencies:
       '@socket.io/component-emitter': 3.1.2
       debug: 4.4.3(supports-color@8.1.1)
@@ -4662,6 +4687,11 @@ snapshots:
       yaml: 2.9.0
 
   vscode-uri@3.2.0: {}
+
+  vue-chartjs@5.3.4(chart.js@4.6.1)(vue@3.5.42(typescript@6.0.3)):
+    dependencies:
+      chart.js: 4.6.1
+      vue: 3.5.42(typescript@6.0.3)
 
   vue-i18n@11.4.10(vue@3.5.42(typescript@6.0.3)):
     dependencies:

@@ -58,6 +58,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       Record<never, never>,
       | '/admin/'
+      | '/admin/Estadisticas'
       | '/admin/datos-local'
       | '/admin/datosFuncionario'
       | '/admin/horarios'
@@ -79,6 +80,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/datosFuncionario': RouteRecordInfo<
       '/admin/datosFuncionario',
       '/admin/datosFuncionario',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/Estadisticas': RouteRecordInfo<
+      '/admin/Estadisticas',
+      '/admin/Estadisticas',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -202,6 +210,7 @@ declare module 'vue-router/auto-routes' {
       routes:
         | '/admin'
         | '/admin/'
+        | '/admin/Estadisticas'
         | '/admin/datos-local'
         | '/admin/datosFuncionario'
         | '/admin/horarios'
@@ -229,6 +238,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/datosFuncionario.vue': {
       routes:
         | '/admin/datosFuncionario'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/Estadisticas.vue': {
+      routes:
+        | '/admin/Estadisticas'
       views:
         | never
       pathParamNames:
