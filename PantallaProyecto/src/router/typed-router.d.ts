@@ -168,6 +168,13 @@ declare module 'vue-router/auto-routes' {
       { sucursalId: ParamValue<false> },
       | never
     >,
+    '/totem/activartotem': RouteRecordInfo<
+      '/totem/activartotem',
+      '/totem/activartotem',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -338,6 +345,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'sucursalId'
+    }
+    'src/pages/totem/activartotem.vue': {
+      routes:
+        | '/totem/activartotem'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
   }
 
