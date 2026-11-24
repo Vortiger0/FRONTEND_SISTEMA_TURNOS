@@ -12,6 +12,7 @@
       <q-btn flat label="Funcionarios" to="/admin/datosFuncionario" />
       <q-btn flat label="Datos del local" to="/admin/datos-local" />
       <q-btn flat label="ESTADÍSTICAS" to="/admin/estadisticas" />
+      <q-btn flat label="TÓTEM" to="/admin/totem" />
       <q-space></q-space>
 
       <q-avatar square class="logo-container q-mr-md">

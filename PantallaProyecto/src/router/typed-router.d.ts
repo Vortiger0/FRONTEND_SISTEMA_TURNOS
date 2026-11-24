@@ -59,6 +59,7 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | '/admin/'
       | '/admin/Estadisticas'
+      | '/admin/Totem'
       | '/admin/datos-local'
       | '/admin/datosFuncionario'
       | '/admin/horarios'
@@ -94,6 +95,13 @@ declare module 'vue-router/auto-routes' {
     '/admin/horarios': RouteRecordInfo<
       '/admin/horarios',
       '/admin/horarios',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/Totem': RouteRecordInfo<
+      '/admin/Totem',
+      '/admin/Totem',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -211,6 +219,7 @@ declare module 'vue-router/auto-routes' {
         | '/admin'
         | '/admin/'
         | '/admin/Estadisticas'
+        | '/admin/Totem'
         | '/admin/datos-local'
         | '/admin/datosFuncionario'
         | '/admin/horarios'
@@ -254,6 +263,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/horarios.vue': {
       routes:
         | '/admin/horarios'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/admin/Totem.vue': {
+      routes:
+        | '/admin/Totem'
       views:
         | never
       pathParamNames:
