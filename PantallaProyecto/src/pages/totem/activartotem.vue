@@ -24,8 +24,8 @@ meta:
           label="xxxx-xxxx"
           outlined
           dense
-                >
-        </q-input>
+          @keyup.enter="activarTotem"
+        />
 
         <!-- BOTÓN DE PROCEDER -->
         <q-btn
@@ -45,9 +45,10 @@ meta:
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 
+const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 
@@ -55,43 +56,61 @@ const codigo = ref('')
 const cargando = ref(false)
 
 const activarTotem = async () => {
-  if (!codigo.value) {
+  const codigoLimpio = codigo.value.trim()
+
+  if (!codigoLimpio) {
     $q.notify({ type: 'warning', message: 'Por favor ingresa el código' })
     return
   }
 
   cargando.value = true
 
- // try {
-//  const response = await fetch('/api/auth/activar-totem', {
- //     method: 'POST',
-//      headers: {
- //       'Content-Type': 'application/json'
- //     },
-  //    body: JSON.stringify({
- //       codigo: codigo.value
- //     })
- //   })
+  try {
+    const response = await fetch('/api/totem/activar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        codigo: codigoLimpio
+      })
+    })
 
- //   const data = await response.json()
+    const data = await response.json().catch(() => ({}))
 
- //   if (!response.ok) {
- //     $q.notify({ type: 'negative', message: data.error || 'Error al procesar la solicitud' })
-  //    return
- //   }
+    if (!response.ok) {
+      $q.notify({
+        type: 'negative',
+        message: data.error || 'Error al procesar la solicitud'
+      })
+      return
+    }
 
-  //  $q.notify({ type: 'positive', message: data.mensaje || 'Totem activado correctamente' })
-//    router.push('/login')
+    if (data.token) {
+      localStorage.setItem('totem_token', data.token)
+    }
 
-//  } catch (error) {
-//    console.error('Error de red:', error)
-//    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
-//  } finally {
-//    cargando.value = false
-//  }
+    const sucursalId =
+      data.sucursalId ??
+      route.params.sucursalId ??
+      route.params.id ??
+      1
+
+    localStorage.setItem('totem_sucursal_id', String(sucursalId))
+
+    $q.notify({
+      type: 'positive',
+      message: data.mensaje || 'Totem activado correctamente'
+    })
+
+    router.push(`/totem/${sucursalId}`)
+  } catch (error) {
+    console.error('Error de red:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo conectar con el servidor' })
+  } finally {
+    cargando.value = false
+  }
 }
-
-
 </script>
 
 <style scoped>

@@ -60,7 +60,7 @@ meta:
             label="GENERAR CÓDIGO DE ACTIVACIÓN"
             class="text-weight-bold text-subtitle1 q-px-xl q-py-md boton-redondeado"
             :loading="procesando"
-            @click="generarCodigo(false)"
+            @click="generarCodigo"
           />
         </q-card>
 
@@ -68,7 +68,7 @@ meta:
           Tarjeta: Esperando activación o código vencido
         -->
         <q-card
-          v-else-if="estadoTotem === 'ESPERANDO_ACTIVACION'"
+          v-else-if="estadoTotem === 'ESPERANDO'"
           class="shadow-5 q-pa-xl card-totem"
         >
           <div class="row items-center justify-between q-mb-md">
@@ -77,7 +77,7 @@ meta:
             </div>
 
             <q-chip
-              v-if="!codigoVencido"
+              v-if="!infoTotem.codigoVencido"
               size="md"
               color="amber-2"
               text-color="amber-10"
@@ -96,15 +96,15 @@ meta:
             </q-chip>
           </div>
 
-          <div class="text-h6 text-weight-regular text-grey-9 q-mb-xs">
-            Código generado {{ infoTotem.generadoTexto || 'el 22/11 a las 21:00' }}.
+          <div v-if="infoTotem.generadoTexto" class="text-h6 text-weight-regular text-grey-9 q-mb-xs">
+            Código generado {{ infoTotem.generadoTexto }}.
           </div>
-          <div class="text-h6 text-weight-regular text-grey-9 q-mb-lg">
-            Vence {{ infoTotem.venceTexto || 'el 23/11 a las 21:00' }}.
+          <div v-if="infoTotem.venceTexto" class="text-h6 text-weight-regular text-grey-9 q-mb-lg">
+            Vence {{ infoTotem.venceTexto }}.
           </div>
 
           <div class="text-subtitle1 text-weight-regular text-grey-7 q-mb-xl">
-            El código no se vuelve a mostrar. Si ya venció, la etiqueta pasa a (Código vencido) en rojo.
+            El código no se vuelve a mostrar. Si ya venció, generá uno nuevo o cancelá el pendiente.
           </div>
 
           <div class="row q-gutter-md">
@@ -114,7 +114,7 @@ meta:
               label="GENERAR CÓDIGO NUEVO"
               class="text-weight-bold text-subtitle1 q-px-lg q-py-sm boton-redondeado"
               :loading="procesando"
-              @click="generarCodigo(false)"
+              @click="generarCodigo"
             />
             <q-btn
               outline
@@ -148,11 +148,8 @@ meta:
             </q-chip>
           </div>
 
-          <div class="text-h6 text-weight-regular text-grey-9 q-mb-xs">
-            Activo desde {{ infoTotem.activoDesdeTexto || 'el 22/11' }}.
-          </div>
-          <div class="text-h6 text-weight-regular text-grey-9 q-mb-lg">
-            Último uso: {{ infoTotem.ultimoUsoTexto || 'hoy 14:32' }}.
+          <div v-if="infoTotem.activoDesdeTexto" class="text-h6 text-weight-regular text-grey-9 q-mb-lg">
+            Activo desde {{ infoTotem.activoDesdeTexto }}.
           </div>
 
           <div class="text-subtitle1 text-weight-regular text-grey-7 q-mb-xl">
@@ -217,12 +214,14 @@ meta:
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar, copyToClipboard } from 'quasar'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth-store'
 
 const $q = useQuasar()
+const router = useRouter()
 const authStore = useAuthStore()
 
-// Estados posibles: 'SIN_TOTEM' | 'ESPERANDO_ACTIVACION' | 'ACTIVO'
+// Estados exactos que devuelve GET /api/admin/totem: 'SIN_TOTEM' | 'ESPERANDO' | 'ACTIVO'
 const estadoTotem = ref('SIN_TOTEM')
 const cargando = ref(false)
 const procesando = ref(false)
@@ -231,24 +230,20 @@ const modalCodigoVisible = ref(false)
 const codigoGeneradoActual = ref('')
 
 const infoTotem = ref({
-  generadoEn: null,
-  venceEn: null,
-  activoDesde: null,
-  ultimoUso: null,
+  codigoGeneradoEn: null,
+  codigoVenceEn: null,
+  codigoVencido: false,
+  activadoEn: null,
   generadoTexto: '',
   venceTexto: '',
-  activoDesdeTexto: '',
-  ultimoUsoTexto: ''
-})
-
-const codigoVencido = computed(() => {
-  if (!infoTotem.value.venceEn) return false
-  return new Date(infoTotem.value.venceEn).getTime() < Date.now()
+  activoDesdeTexto: ''
 })
 
 const etiquetaEstadoActual = computed(() => {
   if (estadoTotem.value === 'SIN_TOTEM') return 'Sin tótem configurado'
-  if (estadoTotem.value === 'ESPERANDO_ACTIVACION') return 'Esperando activación'
+  if (estadoTotem.value === 'ESPERANDO') {
+    return infoTotem.value.codigoVencido ? 'Código vencido' : 'Esperando activación'
+  }
   return 'Activo'
 })
 
@@ -258,6 +253,11 @@ const getHeaders = () => {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   }
+}
+
+const manejarNoAutorizado = () => {
+  authStore.cerrarSesion()
+  router.push('/login')
 }
 
 const formatearFechaCorta = (fechaIso) => {
@@ -271,34 +271,24 @@ const formatearFechaCorta = (fechaIso) => {
   return `el ${dia}/${mes} a las ${horas}:${minutos}`
 }
 
-const formatearDiaMes = (fechaIso) => {
-  if (!fechaIso) return ''
-  const fecha = new Date(fechaIso)
-  if (Number.isNaN(fecha.getTime())) return ''
-  const dia = String(fecha.getDate()).padStart(2, '0')
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0')
-  return `el ${dia}/${mes}`
-}
+const aplicarDatosBackend = (data) => {
+  const estado = data?.estado
+  estadoTotem.value = ['SIN_TOTEM', 'ESPERANDO', 'ACTIVO'].includes(estado)
+    ? estado
+    : 'SIN_TOTEM'
 
-const normalizarEstado = (data) => {
-  const rawEstado = String(data?.estado || '').toUpperCase()
-  if (rawEstado === 'ACTIVO' || data?.activo === true) {
-    estadoTotem.value = 'ACTIVO'
-  } else if (rawEstado === 'ESPERANDO_ACTIVACION' || rawEstado === 'PENDIENTE' || data?.codigoPendiente) {
-    estadoTotem.value = 'ESPERANDO_ACTIVACION'
-  } else {
-    estadoTotem.value = 'SIN_TOTEM'
-  }
+  const vencidoPorFecha = data?.codigoVenceEn
+    ? new Date(data.codigoVenceEn).getTime() < Date.now()
+    : false
 
   infoTotem.value = {
-    generadoEn: data?.generadoEn || data?.creadoEn || null,
-    venceEn: data?.venceEn || data?.expiraEn || null,
-    activoDesde: data?.activoDesde || data?.activadoEn || null,
-    ultimoUso: data?.ultimoUso || null,
-    generadoTexto: formatearFechaCorta(data?.generadoEn || data?.creadoEn),
-    venceTexto: formatearFechaCorta(data?.venceEn || data?.expiraEn),
-    activoDesdeTexto: formatearDiaMes(data?.activoDesde || data?.activadoEn),
-    ultimoUsoTexto: data?.ultimoUso ? formatearFechaCorta(data.ultimoUso).replace(/^el /, '') : ''
+    codigoGeneradoEn: data?.codigoGeneradoEn ?? null,
+    codigoVenceEn: data?.codigoVenceEn ?? null,
+    codigoVencido: Boolean(data?.codigoVencido ?? vencidoPorFecha),
+    activadoEn: data?.activadoEn ?? null,
+    generadoTexto: formatearFechaCorta(data?.codigoGeneradoEn),
+    venceTexto: formatearFechaCorta(data?.codigoVenceEn),
+    activoDesdeTexto: formatearFechaCorta(data?.activadoEn)
   }
 }
 
@@ -311,42 +301,50 @@ const cargarEstadoTotem = async () => {
       credentials: 'include'
     })
 
-    if (!response.ok) {
-      throw new Error(`Error HTTP: ${response.status}`)
+    if (response.status === 401) {
+      manejarNoAutorizado()
+      return
     }
 
-    const data = await response.json()
-    normalizarEstado(data)
+    const data = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(data?.error || `Error HTTP: ${response.status}`)
+    }
+
+    aplicarDatosBackend(data)
   } catch (error) {
     console.error('Error al cargar estado del tótem:', error)
     $q.notify({
       type: 'negative',
-      message: 'No se pudo obtener el estado del tótem'
+      message: error?.message || 'No se pudo obtener el estado del tótem'
     })
   } finally {
     cargando.value = false
   }
 }
 
-const generarCodigo = async (esCambioActivo = false) => {
+const generarCodigo = async () => {
   procesando.value = true
   try {
-    const endpoint = esCambioActivo
-      ? '/api/admin/totem/regenerar'
-      : '/api/admin/totem/codigo'
-
-    const response = await fetch(endpoint, {
+    const response = await fetch('/api/admin/totem/codigo', {
       method: 'POST',
       headers: getHeaders(),
       credentials: 'include'
     })
 
-    if (!response.ok) {
-      throw new Error(`Error HTTP: ${response.status}`)
+    if (response.status === 401) {
+      manejarNoAutorizado()
+      return
     }
 
-    const data = await response.json()
-    codigoGeneradoActual.value = data?.codigo || data?.codigoActivacion || '------'
+    const data = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(data?.error || `Error HTTP: ${response.status}`)
+    }
+
+    codigoGeneradoActual.value = data?.codigo || ''
     modalCodigoVisible.value = true
 
     await cargarEstadoTotem()
@@ -354,7 +352,7 @@ const generarCodigo = async (esCambioActivo = false) => {
     console.error('Error al generar código:', error)
     $q.notify({
       type: 'negative',
-      message: 'No se pudo generar el código de activación'
+      message: error?.message || 'No se pudo generar el código de activación'
     })
   } finally {
     procesando.value = false
@@ -376,7 +374,7 @@ const confirmarCambioEquipo = () => {
     },
     persistent: true
   }).onOk(() => {
-    generarCodigo(true)
+    generarCodigo()
   })
 }
 
@@ -389,6 +387,11 @@ const cancelarCodigoPendiente = async () => {
       credentials: 'include'
     })
 
+    if (response.status === 401) {
+      manejarNoAutorizado()
+      return
+    }
+
     if (response.status === 409) {
       $q.notify({
         type: 'info',
@@ -398,16 +401,23 @@ const cancelarCodigoPendiente = async () => {
       return
     }
 
+    const data = await response.json().catch(() => ({}))
+
     if (!response.ok) {
-      throw new Error(`Error HTTP: ${response.status}`)
+      throw new Error(data?.error || `Error HTTP: ${response.status}`)
     }
+
+    $q.notify({
+      type: 'positive',
+      message: data?.mensaje || 'Código pendiente cancelado'
+    })
 
     await cargarEstadoTotem()
   } catch (error) {
     console.error('Error al cancelar código pendiente:', error)
     $q.notify({
       type: 'negative',
-      message: 'No se pudo cancelar el código pendiente'
+      message: error?.message || 'No se pudo cancelar el código pendiente'
     })
   } finally {
     procesando.value = false

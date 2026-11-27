@@ -7,17 +7,17 @@ meta:
 <template>
   <q-page class="fondo flex flex-center q-pa-md select-none">
     <div style="width: 100%; max-width: 460px;">
-      
+
       <!-- PANTALLA 1: ESTADO INICIAL -->
       <q-card v-if="!turnoOtorgado" class="shadow-10 text-center radius-20 q-pa-md bg-white card-totem">
-        
+
         <!-- ENCABEZADO LOCAL CON NOMBRE DE SUCURSAL DINÁMICO -->
         <q-card-section class="q-pb-xs">
           <div class="row items-center justify-center q-gutter-x-xs text-caption text-grey-7 text-weight-bold text-uppercase letter-spacing-sm q-mb-xs">
             <q-icon name="place" color="primary" size="16px" />
             <span>{{ nombreSucursal }}</span>
           </div>
-          
+
           <div class="text-h4 text-weight-bolder text-grey-9 q-mt-sm">
             SACAR TURNO
           </div>
@@ -62,7 +62,7 @@ meta:
 
       <!-- PANTALLA 2: MUESTRA DEL NÚMERO (10 SEGUNDOS) -->
       <q-card v-else class="shadow-10 text-center radius-20 q-pa-md bg-white card-totem">
-        
+
         <!-- ENCABEZADO LOCAL -->
         <q-card-section class="q-pb-none">
           <div class="row items-center justify-center q-gutter-x-xs text-caption text-grey-7 text-weight-bold text-uppercase letter-spacing-sm q-mb-xs">
@@ -115,11 +115,12 @@ meta:
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import axios from 'axios'
 
 const route = useRoute()
+const router = useRouter()
 const $q = useQuasar()
 
 const sucursalId = route.params.sucursalId
@@ -145,6 +146,17 @@ const loading = ref(false)
 const segundosRestantes = ref(10)
 let temporizador = null
 
+const forzarReactivacion = (mensaje = 'El tótem requiere activación nuevamente') => {
+  localStorage.removeItem('totem_token')
+  localStorage.removeItem('totem_sucursal_id')
+  $q.notify({
+    type: 'warning',
+    message,
+    position: 'top'
+  })
+  router.replace('/totem/activar')
+}
+
 const obtenerTurno = async () => {
   const idNumerico = Number(sucursalId)
 
@@ -157,17 +169,40 @@ const obtenerTurno = async () => {
     return
   }
 
+  const totemToken = localStorage.getItem('totem_token')
+  if (!totemToken) {
+    forzarReactivacion('Debe activar el tótem antes de solicitar turnos')
+    return
+  }
+
   loading.value = true
 
   try {
-    const response = await axios.post('/api/turnos', {
-      sucursalId: idNumerico
-    })
+    const response = await axios.post(
+      '/api/turnos',
+      {
+        sucursalId: idNumerico
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${totemToken}`
+        }
+      }
+    )
 
     miNumero.value = response.data.numero
     turnoOtorgado.value = true
     iniciarTemporizador()
   } catch (error) {
+    const status = error.response?.status
+
+    if (status === 401 || status === 403) {
+      forzarReactivacion(
+        error.response?.data?.error || 'La sesión del tótem ya no es válida. Activá el tótem nuevamente.'
+      )
+      return
+    }
+
     console.error('Error al generar el turno desde el tótem:', error)
     $q.notify({
       type: 'negative',
